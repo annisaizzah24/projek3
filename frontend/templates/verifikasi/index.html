@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Riwayat & Laporan Verifikasi - Sociovault{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-journal-text text-primary me-2"></i>Riwayat & Laporan Verifikasi</h3>
+        <p class="text-muted mb-0">Audit riwayat evaluasi Rule Engine dan rekam jejak penetapan konfirmasi petugas</p>
+    </div>
+    <a href="{{ url_for('verifikasi.mulai_verifikasi') }}" class="btn btn-primary">
+        <i class="bi bi-cpu me-1"></i> + Mulai Verifikasi Baru
+    </a>
+</div>
+
+<!-- Filter Bar with Date Range -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Status Kelayakan</label>
+                <select name="status" class="form-select">
+                    <option value="">-- Semua Status --</option>
+                    <option value="layak" {% if selected_status == 'layak' %}selected{% endif %}>Layak</option>
+                    <option value="tidak_layak" {% if selected_status == 'tidak_layak' %}selected{% endif %}>Tidak Layak</option>
+                    <option value="perlu_ditinjau" {% if selected_status == 'perlu_ditinjau' %}selected{% endif %}>Perlu Ditinjau</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Menunggu Konfirmasi</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Program Bantuan</label>
+                <select name="program_id" class="form-select">
+                    <option value="">-- Semua Program --</option>
+                    {% for p in daftar_program %}
+                        <option value="{{ p.id }}" {% if selected_program == p.id %}selected{% endif %}>{{ p.nama_program }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Tanggal Mulai</label>
+                <input type="date" name="tanggal_mulai" class="form-control" value="{{ tanggal_mulai or '' }}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Tanggal Selesai</label>
+                <input type="date" name="tanggal_selesai" class="form-control" value="{{ tanggal_selesai or '' }}">
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                <a href="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Verification Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">ID</th>
+                        <th>Warga (NIK & Nama)</th>
+                        <th>Program Bantuan</th>
+                        <th>Hasil Sistem (Rule Engine)</th>
+                        <th>Status Final Petugas</th>
+                        <th>Tanggal Verifikasi</th>
+                        <th class="text-end pe-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in pagination.items %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-muted">#{{ v.id }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ v.warga.nama }}</div>
+                            <div class="small font-monospace text-primary">{{ v.warga.nik }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ v.program.nama_program }}</span>
+                        </td>
+                        <td>
+                            {% if v.status_otomatis == 'layak' %}
+                                <span class="badge status-badge-layak px-2 py-1">
+                                    <i class="bi bi-check-circle me-1"></i> Layak
+                                </span>
+                            {% elif v.status_otomatis == 'tidak_layak' %}
+                                <span class="badge status-badge-tidak-layak px-2 py-1">
+                                    <i class="bi bi-x-circle me-1"></i> Tidak Layak
+                                </span>
+                            {% else %}
+                                <span class="badge status-badge-perlu-tinjau px-2 py-1">
+                                    <i class="bi bi-exclamation-triangle me-1"></i> Perlu Ditinjau
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if v.status_final == 'layak' %}
+                                <span class="badge bg-success px-2 py-1"><i class="bi bi-check-all me-1"></i> Layak</span>
+                            {% elif v.status_final == 'tidak_layak' %}
+                                <span class="badge bg-danger px-2 py-1"><i class="bi bi-x-circle me-1"></i> Tidak Layak</span>
+                            {% elif v.status_final == 'perlu_ditinjau' %}
+                                <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-hourglass-split me-1"></i> Perlu Ditinjau</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border px-2 py-1"><i class="bi bi-clock me-1"></i> Menunggu Konfirmasi</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted d-block">{{ v.tanggal_verifikasi.strftime('%d-%m-%Y %H:%M') if v.tanggal_verifikasi else '-' }}</small>
+                            <small class="text-secondary">Oleh: {{ v.petugas.nama }}</small>
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="{{ url_for('verifikasi.detail_verifikasi', id=v.id) }}" class="btn btn-sm btn-outline-primary">
+                                Audit Detail <i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            Tidak ada riwayat verifikasi bansos yang sesuai filter.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination Footer -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+        <small class="text-muted">
+            Menampilkan halaman {{ pagination.page }} dari {{ pagination.pages }} (Total: {{ pagination.total }} data)
+        </small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('verifikasi.riwayat_verifikasi', page=pagination.prev_num, status=selected_status, program_id=selected_program, tanggal_mulai=tanggal_mulai, tanggal_selesai=tanggal_selesai) }}">Sebelumnya</a>
+                </li>
+                {% for p in pagination.iter_pages() %}
+                    {% if p %}
+                        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('verifikasi.riwayat_verifikasi', page=p, status=selected_status, program_id=selected_program, tanggal_mulai=tanggal_mulai, tanggal_selesai=tanggal_selesai) }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('verifikasi.riwayat_verifikasi', page=pagination.next_num, status=selected_status, program_id=selected_program, tanggal_mulai=tanggal_mulai, tanggal_selesai=tanggal_selesai) }}">Selanjutnya</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

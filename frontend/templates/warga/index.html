@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Daftar Warga - Sociovault{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-people-fill me-2 text-primary"></i>Data Kependudukan Warga</h3>
+        <p class="text-muted mb-0">Kelola data warga, foto fisik rumah tinggal, dan klasifikasi desil penerima bantuan sosial</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('warga.tambah_keluarga') }}" class="btn btn-outline-primary">
+            <i class="bi bi-folder-plus me-1"></i> + Kartu Keluarga
+        </a>
+        <a href="{{ url_for('warga.tambah_warga') }}" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i> + Tambah Warga
+        </a>
+    </div>
+</div>
+
+<!-- Filter & Search Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('warga.daftar_warga') }}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Pencarian NIK / Nama</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Cari nomor NIK atau nama warga..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Filter Kartu Keluarga (KK)</label>
+                <select name="keluarga" class="form-select">
+                    <option value="">-- Semua Keluarga --</option>
+                    {% for k in daftar_keluarga %}
+                        <option value="{{ k.id }}" {% if selected_keluarga == (k.id|string) or selected_keluarga == k.nomor_kk %}selected{% endif %}>
+                            No. KK: {{ k.nomor_kk }} — {{ k.kepala_keluarga }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Filter Kategori Desil</label>
+                <select name="desil" class="form-select">
+                    <option value="">-- Semua Desil (1-10) --</option>
+                    {% for i in range(1, 11) %}
+                        <option value="{{ i }}" {% if desil_filter == (i|string) %}selected{% endif %}>
+                            Desil {{ i }} — {{ desil_info[i]['kategori'] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Warga & NIK</th>
+                        <th>Foto Rumah</th>
+                        <th>Kategori Desil</th>
+                        <th>Gaji / Penghasilan</th>
+                        <th>Kartu Keluarga</th>
+                        <th>Tanggungan / Aset</th>
+                        <th class="text-end pe-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in pagination.items %}
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-bold text-dark">{{ w.nama }}</div>
+                            <div class="font-monospace small text-primary fw-semibold">{{ w.nik }}</div>
+                            <div class="small text-muted">{{ w.alamat|truncate(30) }}</div>
+                        </td>
+                        <td>
+                            <div class="rounded border overflow-hidden shadow-sm" style="width: 75px; height: 50px;">
+                                <img src="{{ url_for('static', filename=w.foto_rumah_url) }}" alt="Foto Rumah {{ w.nama }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ w.keterangan_desil.badge_class }} px-2 py-1">
+                                {{ w.keterangan_desil.label }}
+                            </span>
+                            <div class="small fw-semibold text-dark mt-1">{{ w.keterangan_desil.kategori }}</div>
+                            <div class="small {% if w.keterangan_desil.is_layak_bansos %}text-success{% else %}text-muted{% endif %}" style="font-size: 0.72rem;">
+                                {{ w.keterangan_desil.kelayakan }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ w.penghasilan|rupiah }}</div>
+                            <div class="small text-muted">/ bulan</div>
+                        </td>
+                        <td>
+                            <div class="small fw-semibold text-dark">{{ w.keluarga.nomor_kk }}</div>
+                            <div class="text-muted small">{{ w.keluarga.kepala_keluarga }}</div>
+                        </td>
+                        <td>
+                            <div><span class="badge bg-secondary rounded-pill">{{ w.jumlah_tanggungan }} orang</span></div>
+                            <div class="small fw-semibold text-dark mt-1">Aset: {{ w.nilai_aset|rupiah }}</div>
+                            <div class="small text-muted" style="font-size: 0.75rem;">
+                                <i class="bi bi-house me-1"></i>{{ w.status_rumah_label }} | <i class="bi bi-lightning-charge me-1"></i>{{ w.daya_listrik or 450 }}VA
+                            </div>
+                        </td>
+                        <td class="text-end pe-3">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('desil.ajukan_perubahan', warga_id=w.id) }}" class="btn btn-outline-warning" title="Ajukan Perubahan Desil Warga">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </a>
+                                <a href="{{ url_for('warga.edit_warga', id=w.id) }}" class="btn btn-outline-secondary" title="Edit Data Warga">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('warga.hapus_warga', id=w.id) }}" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data warga {{ w.nama }}? Data yang memiliki riwayat verifikasi tidak dapat dihapus.');">
+                                    <button type="submit" class="btn btn-outline-danger" title="Hapus Warga">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            Tidak ada data warga yang sesuai kriteria pencarian/filter.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-white py-3">
+        <nav aria-label="Navigasi Halaman">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('warga.daftar_warga', page=page_num, keluarga=selected_keluarga, search=search, desil=desil_filter) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

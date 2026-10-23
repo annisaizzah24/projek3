@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sociovault - Sistem Verifikasi Bansos{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <style>
+        body {
+            min-height: 100vh;
+            background-color: #f4f6f9;
+        }
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background-color: #1e293b;
+            color: #f8fafc;
+            flex-shrink: 0;
+        }
+        .sidebar-brand {
+            padding: 1.25rem 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .sidebar .nav-link {
+            color: #94a3b8;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            border-radius: 0;
+            transition: all 0.2s ease;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.08);
+            border-left: 4px solid #3b82f6;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+        .sidebar-heading {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            padding: 1rem 1.5rem 0.25rem;
+            font-weight: 700;
+        }
+        .main-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .topbar {
+            height: 64px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .content-area {
+            padding: 1.75rem;
+            flex-grow: 1;
+        }
+        .status-badge-layak {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            font-weight: 600;
+        }
+        .status-badge-tidak-layak {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            font-weight: 600;
+        }
+        .status-badge-perlu-tinjau {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex">
+    {% if current_user.is_authenticated %}
+    <!-- SIDEBAR NAVIGASI -->
+    <aside class="sidebar d-none d-lg-block">
+        <div class="sidebar-brand d-flex align-items-center">
+            <i class="bi bi-shield-check text-primary fs-3 me-2"></i>
+            <span>Sociovault</span>
+        </div>
+
+        {% if current_user.is_warga %}
+        <div class="sidebar-heading">Layanan Warga</div>
+        <ul class="nav flex-column mb-3">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-person-badge"></i> Status Bansos Saya
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'desil.ajukan_perubahan' %}active{% endif %}" href="{{ url_for('desil.ajukan_perubahan') }}">
+                    <i class="bi bi-arrow-repeat"></i> Ajukan Perubahan Desil
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'desil.riwayat_saya' %}active{% endif %}" href="{{ url_for('desil.riwayat_saya') }}">
+                    <i class="bi bi-clock-history"></i> Riwayat Pengajuan Desil
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('program.') %}active{% endif %}" href="{{ url_for('program.daftar_program') }}">
+                    <i class="bi bi-gift"></i> Program Bantuan
+                </a>
+            </li>
+        </ul>
+        {% else %}
+        <div class="sidebar-heading">Menu Utama</div>
+        <ul class="nav flex-column mb-3">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('warga.') %}active{% endif %}" href="{{ url_for('warga.daftar_warga') }}">
+                    <i class="bi bi-people"></i> Data Warga
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('program.') %}active{% endif %}" href="{{ url_for('program.daftar_program') }}">
+                    <i class="bi bi-gift"></i> Program Bantuan
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-heading">Verifikasi & Sanggah</div>
+        <ul class="nav flex-column mb-3">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint and request.endpoint.startswith('desil.') %}active{% endif %}" href="{{ url_for('desil.daftar_pengajuan') }}">
+                    <i class="bi bi-arrow-left-right"></i> Pengajuan Desil
+                    {% if pending_desil_count and pending_desil_count > 0 %}
+                    <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size: 0.7rem;">{{ pending_desil_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'verifikasi.mulai_verifikasi' %}active{% endif %}" href="{{ url_for('verifikasi.mulai_verifikasi') }}">
+                    <i class="bi bi-cpu"></i> Verifikasi (Rule Engine)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'verifikasi.riwayat_verifikasi' %}active{% endif %}" href="{{ url_for('verifikasi.riwayat_verifikasi') }}">
+                    <i class="bi bi-journal-text"></i> Riwayat / Laporan
+                </a>
+            </li>
+        </ul>
+
+        {% if current_user.is_admin %}
+        <div class="sidebar-heading">Administrasi Sistem</div>
+        <ul class="nav flex-column mb-3">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'auth.daftar_petugas' %}active{% endif %}" href="{{ url_for('auth.daftar_petugas') }}">
+                    <i class="bi bi-person-gear"></i> Kelola Petugas
+                </a>
+            </li>
+        </ul>
+        {% endif %}
+        {% endif %}
+
+        <div class="mt-auto p-3 border-top border-secondary">
+            <div class="small text-muted mb-1">Masuk Sebagai:</div>
+            <div class="fw-bold text-white small text-truncate">{{ current_user.nama }}</div>
+            <span class="badge bg-primary text-white text-uppercase" style="font-size: 0.65rem;">{{ current_user.role }}</span>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="d-flex align-items-center">
+                {% if not current_user.is_authenticated %}
+                <span class="fw-bold fs-5 text-primary"><i class="bi bi-shield-check me-2"></i>Sociovault</span>
+                {% else %}
+                <span class="text-muted small d-none d-md-inline">Sistem Verifikasi Kelayakan Bantuan Sosial Terpadu</span>
+                {% endif %}
+            </div>
+            <div>
+                {% if current_user.is_authenticated %}
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border p-2 d-none d-sm-inline">
+                        <i class="bi bi-person-circle me-1"></i> {{ current_user.username }}
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                    </a>
+                </div>
+                {% else %}
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus-fill me-1"></i> Registrasi Warga
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- CONTENT AREA -->
+        <div class="content-area">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="row">
+                        <div class="col-12">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer class="py-3 bg-white border-top text-center text-muted small mt-auto">
+            &copy; 2026 Sociovault — Sistem Verifikasi Kelayakan Bantuan Sosial Berbasis Rule Engine.
+        </footer>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

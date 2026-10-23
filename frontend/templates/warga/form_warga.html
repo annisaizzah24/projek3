@@ -1,0 +1,1023 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}{{ 'Edit Warga' if is_edit else 'Tambah Warga Baru' }} - Sociovault{% endblock %}
+
+{% block content %}
+<style>
+@media (min-width: 768px) {
+    .row-aligned-inputs .form-label {
+        min-height: 2.85rem;
+        display: flex;
+        align-items: flex-end;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h3 class="fw-bold mb-1">
+                    <i class="bi {{ 'bi-pencil-square' if is_edit else 'bi-person-plus-fill' }} text-primary me-2"></i>
+                    {{ 'Edit Data Warga' if is_edit else 'Pendaftaran Warga Baru' }}
+                </h3>
+                <p class="text-muted mb-0">Pastikan seluruh data tervalidasi dengan benar termasuk foto fisik rumah dan kategori desil.</p>
+            </div>
+            <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <!-- NIK -->
+                        <div class="col-md-6">
+                            {{ render_field(form.nik, placeholder="16 digit angka KTP", maxlength="16", help_text="Tepat 16 digit angka numerik, tidak boleh duplikat.") }}
+                        </div>
+
+                        <!-- Kartu Keluarga (KK) -->
+                        <div class="col-md-6">
+                            {{ render_field(form.id_keluarga, class_="form-select") }}
+                            <div class="form-text mt-n2 mb-3">
+                                Belum terdaftar? <a href="{{ url_for('warga.tambah_keluarga') }}" target="_blank">+ Tambah KK Baru</a>
+                            </div>
+                        </div>
+
+                        <!-- Nama Lengkap -->
+                        <div class="col-md-12">
+                            {{ render_field(form.nama, placeholder="Contoh: Budi Santoso") }}
+                        </div>
+
+                        <!-- Alamat Domisili -->
+                        <div class="col-md-12">
+                            {{ render_field(form.alamat, rows="2", placeholder="Nama jalan, RT/RW, Kelurahan, Kecamatan") }}
+                        </div>
+
+                        <!-- Baris Tanggal Lahir, Penghasilan, & Jumlah Tanggungan (Disejajarkan) -->
+                        <div class="col-12">
+                            <div class="row row-aligned-inputs">
+                                <!-- Tanggal Lahir -->
+                                <div class="col-md-4">
+                                    {{ render_field(form.tanggal_lahir, type="date", help_text="Tidak boleh di masa depan.") }}
+                                </div>
+
+                                <!-- Penghasilan -->
+                                <div class="col-md-4">
+                                    {{ render_field(form.penghasilan, placeholder="0", help_text="Angka nominal bulanan (≥ 0).") }}
+                                </div>
+
+                                <!-- Jumlah Tanggungan -->
+                                <div class="col-md-4">
+                                    {{ render_field(form.jumlah_tanggungan, placeholder="0", help_text="Bilangan bulat (≥ 0).") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Parameter Aset Fisik & Infrastruktur (Revisi Dosen) -->
+                        <div class="col-12 mt-3">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="bi bi-houses-fill me-2"></i>Parameter Indikator Aset Fisik & Kelistrikan
+                                </h6>
+                                <div class="row g-3">
+                                    <!-- Status Rumah -->
+                                    <div class="col-md-6">
+                                        {{ render_field(form.status_rumah, class_="form-select", help_text="Status kepemilikan bangunan tempat tinggal.") }}
+                                    </div>
+                                    <!-- Luas Bangunan (Hybrid Input) -->
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="luas_tanah" class="form-label fw-semibold text-dark mb-1">
+                                                <i class="bi bi-rulers text-primary me-1"></i>
+                                                Luas Bangunan (m²) <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="small text-muted mb-2">
+                                                Masukkan luas bangunan rumah Anda dalam meter persegi. Jika tidak mengetahui luasnya, gunakan alat bantu berikut.
+                                            </div>
+
+                                            <!-- 1. Input Utama Luas Bangunan -->
+                                            <div class="input-group">
+                                                <input type="number" 
+                                                       step="any" 
+                                                       min="0.01" 
+                                                       name="luas_tanah" 
+                                                       id="luas_tanah" 
+                                                       class="form-control fw-bold text-dark {{ 'is-invalid' if form.luas_tanah.errors else '' }}" 
+                                                       placeholder="Contoh: 36" 
+                                                       value="{{ form.luas_tanah.data if form.luas_tanah.data is not none else '' }}" 
+                                                       required>
+                                                <span class="input-group-text bg-light text-muted">m²</span>
+                                            </div>
+                                            {% for err in form.luas_tanah.errors %}
+                                                <div class="invalid-feedback d-block">{{ err }}</div>
+                                            {% endfor %}
+
+                                            <!-- 2. Pilihan Cepat Berdasarkan Tipe Rumah -->
+                                            <div class="mt-3">
+                                                <div class="small fw-semibold text-secondary mb-1">
+                                                    Pilih ukuran yang mendekati luas bangunan Anda
+                                                </div>
+                                                <div class="d-flex flex-wrap gap-1" id="containerPilihanCepatLuas">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 btn-chip-luas" data-luas="12">
+                                                        12 m² <span class="small opacity-75">(Kos)</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 btn-chip-luas" data-luas="21">
+                                                        21 m²
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 btn-chip-luas" data-luas="36">
+                                                        36 m²
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 btn-chip-luas" data-luas="45">
+                                                        45 m²
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 btn-chip-luas" data-luas="70">
+                                                        70 m²
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- 3. Tombol Alat Bantu Hitung Panjang x Lebar -->
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnToggleKalkulator">
+                                                    <i class="bi bi-calculator me-1"></i> Bantu hitung Panjang × Lebar
+                                                </button>
+                                            </div>
+
+                                            <!-- Panel Popdown Kalkulator Panjang x Lebar -->
+                                            <div id="panelKalkulatorLuas" class="card border rounded-3 p-3 bg-white mt-2 shadow-sm d-none">
+                                                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                                    <span class="small fw-bold text-dark">
+                                                        <i class="bi bi-calculator-fill text-primary me-1"></i>Kalkulator Panjang × Lebar
+                                                    </span>
+                                                    <button type="button" class="btn-close" id="btnCloseKalkulator" aria-label="Tutup"></button>
+                                                </div>
+                                                <div class="small text-muted mb-2">
+                                                    Masukkan panjang dan lebar bangunan dalam meter. Sistem akan menghitung luas berdasarkan hasil perkalian keduanya.
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <label class="form-label small fw-semibold text-dark mb-1">Panjang (meter)</label>
+                                                        <input type="number" step="any" min="0.01" id="kalkulator_panjang" class="form-control form-control-sm" placeholder="Contoh: 6">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="form-label small fw-semibold text-dark mb-1">Lebar (meter)</label>
+                                                        <input type="number" step="any" min="0.01" id="kalkulator_lebar" class="form-control form-control-sm" placeholder="Contoh: 6">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Area Error Validasi Kalkulator -->
+                                                <div id="kalkulator_error" class="alert alert-danger p-2 small mt-2 mb-0 d-none">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                    <span id="kalkulator_error_text"></span>
+                                                </div>
+
+                                                <!-- Area Sukses Hasil Perhitungan -->
+                                                <div id="kalkulator_sukses" class="alert alert-success p-2 small mt-2 mb-0 d-none">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                                    <span id="kalkulator_sukses_text"></span>
+                                                </div>
+
+                                                <div class="d-flex justify-content-end gap-1 mt-3">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnBatalKalkulator">Tutup</button>
+                                                    <button type="button" class="btn btn-sm btn-primary" id="btnHitungLuas">
+                                                        <i class="bi bi-check-lg me-1"></i> Hitung Luas
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Meteran Listrik -->
+                                    <div class="col-md-6">
+                                        {{ render_field(form.daya_listrik, class_="form-select", help_text="Besaran daya meteran listrik PLN di rumah.") }}
+                                    </div>
+
+                                    <!-- Kepemilikan Kendaraan -->
+                                    <div class="col-md-6">
+                                        {{ render_field(form.jenis_kendaraan, class_="form-select", help_text="Pilih jenis kendaraan bermotor yang dimiliki.") }}
+                                    </div>
+
+                                    <!-- Jumlah Kendaraan -->
+                                    <div class="col-md-6">
+                                        {{ render_field(form.jumlah_kendaraan, placeholder="0", help_text="Banyaknya unit kendaraan bermotor.") }}
+                                    </div>
+
+                                    <!-- Foto Kendaraan -->
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small text-dark">{{ form.foto_kendaraan.label.text }}</label>
+                                            {{ form.foto_kendaraan(class_="form-control" + (" is-invalid" if form.foto_kendaraan.errors else ""), accept="image/*") }}
+                                            {% for err in form.foto_kendaraan.errors %}
+                                                <div class="invalid-feedback">{{ err }}</div>
+                                            {% endfor %}
+                                            <div class="form-text small">Unggah foto bukti kendaraan bermotor (JPG, PNG).</div>
+                                        </div>
+                                        {% if is_edit and warga and warga.foto_kendaraan %}
+                                        <div class="card p-2 bg-white border mt-2">
+                                            <div class="small text-muted mb-1"><i class="bi bi-bicycle me-1"></i>Foto Kendaraan Tersimpan:</div>
+                                            <img src="{{ url_for('static', filename=warga.foto_kendaraan) }}" alt="Foto Kendaraan" class="rounded border shadow-sm" style="max-height: 100px; max-width: 150px; object-fit: cover;">
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nilai Aset -->
+                        <div class="col-md-6 mt-3">
+                            {{ render_field(form.nilai_aset, placeholder="0", help_text="Kosongkan atau isi 0 agar sistem otomatis menghitung dari rincian aset di atas.") }}
+                        </div>
+
+                        <!-- Desil Kesejahteraan (Dihitung Otomatis oleh Sistem) -->
+                        <div class="col-md-6 mt-3">
+                            <label class="form-label fw-semibold text-dark d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-bar-chart-steps text-primary me-1"></i>
+                                    {{ form.desil.label.text }}
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border" id="desil_badge_mode">
+                                    <i class="bi bi-cpu-fill me-1"></i>Kalkulasi Otomatis
+                                </span>
+                            </label>
+
+                            <!-- Hidden field untuk submit nilai desil ke backend -->
+                            <input type="hidden" name="desil" id="desil" value="{{ form.desil.data or '' }}">
+
+                            <!-- Field Tampilan Read-Only (Pengguna tidak dapat mengubah manual) -->
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-light text-primary border-end-0">
+                                    <i class="bi bi-shield-check" id="desil_icon_status"></i>
+                                </span>
+                                <input type="text" id="desil_display" class="form-control bg-light fw-bold text-dark border-start-0" 
+                                       readonly 
+                                       value="" 
+                                       placeholder="Menunggu kelengkapan data & foto rumah..."
+                                       style="cursor: not-allowed;">
+                            </div>
+
+                            <!-- Live Feedback Card Kesejahteraan & Indikator PMT -->
+                            <div id="desil_status_card" class="card border rounded-3 p-3 bg-light shadow-none">
+                                <!-- Status 1: Menunggu Data Lengkap & Foto -->
+                                <div id="desil_waiting_box" class="text-center py-2">
+                                    <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 small" id="desil_waiting_badge">
+                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu data & foto lengkap
+                                    </span>
+                                    <div class="small text-muted mt-2" id="desil_waiting_msg">
+                                        Lengkapi seluruh data penghasilan, aset fisik, kelistrikan, dan unggah foto tampak depan rumah untuk menghitung Tingkat Desil Kesejahteraan.
+                                    </div>
+                                </div>
+
+                                <!-- Status 2 & 3: Loading / Mengunggah / Menghitung -->
+                                <div id="desil_loading_box" class="text-center py-3 d-none">
+                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                                    <div id="desil_loading_text" class="small fw-semibold text-primary">
+                                        Menghitung Tingkat Desil Kesejahteraan...
+                                    </div>
+                                </div>
+
+                                <!-- Status 4: Kesalahan Validasi -->
+                                <div id="desil_error_box" class="alert alert-danger p-2 small mb-0 d-none">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    <span id="desil_error_msg">Terjadi kesalahan validasi data.</span>
+                                </div>
+
+                                <!-- Status 5: Desil Siap (Hanya muncul jika SEMUA data & foto valid) -->
+                                <div id="desil_ready_box" class="d-none">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                        <span id="desil_badge_live" class="badge px-3 py-2 fs-6">Desil -</span>
+                                        <span id="desil_kelayakan_live" class="badge bg-white text-dark border">Status Bansos</span>
+                                    </div>
+                                    <p id="desil_deskripsi_live" class="small text-muted mb-2"></p>
+                                    <div class="p-2 rounded bg-white border small">
+                                        <div class="d-flex justify-content-between text-muted">
+                                            <span>Pendapatan per Kapita:</span>
+                                            <strong id="desil_perkapita_live" class="text-dark">Rp 0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between text-muted mt-1">
+                                            <span>Faktor Penentu:</span>
+                                            <span id="desil_faktor_live" class="fw-semibold text-dark text-end">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text small mt-1">
+                                <i class="bi bi-info-circle me-1"></i>Dihitung otomatis oleh rule engine (Proxy-Means Testing DTKS/BPS) dari pendapatan, listrik, rumah, & kendaraan setelah seluruh data dan foto terisi.
+                            </div>
+                        </div>
+
+                        <!-- Foto Tampak Depan Rumah (Syarat Wajib Perhitungan Desil) -->
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small text-dark d-flex justify-content-between align-items-center">
+                                    <span>
+                                        {{ form.foto_rumah.label.text }}
+                                        <span class="text-danger fw-bold">*</span>
+                                    </span>
+                                    <span class="badge bg-danger-subtle text-danger border small">
+                                        Syarat Wajib Desil
+                                    </span>
+                                </label>
+                                
+                                <input type="hidden" id="has_existing_foto_rumah" value="{{ '1' if (is_edit and warga and warga.foto_rumah) else '0' }}">
+                                
+                                {{ form.foto_rumah(class_="form-control" + (" is-invalid" if form.foto_rumah.errors else ""), accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp", id="inputFotoRumah") }}
+                                
+                                <div id="foto_rumah_error" class="text-danger small mt-1 d-none">
+                                    <i class="bi bi-exclamation-circle me-1"></i><span id="foto_rumah_error_text"></span>
+                                </div>
+                                {% for err in form.foto_rumah.errors %}
+                                    <div class="invalid-feedback d-block">{{ err }}</div>
+                                {% endfor %}
+                                <div class="form-text small">Unggah foto kondisi fisik tampak depan tempat tinggal (Format JPG, JPEG, PNG, atau WEBP). Wajib diunggah untuk mengaktifkan perhitungan desil.</div>
+
+                                <!-- Dynamic Preview Container for Selected Photo -->
+                                <div id="preview_foto_container" class="card p-2 bg-light border mt-2 d-none">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img id="preview_foto_img" src="" alt="Pratinjau Foto Rumah" class="rounded border shadow-sm" style="max-height: 80px; width: 100px; object-fit: cover;">
+                                            <div>
+                                                <div class="fw-semibold small text-dark" id="preview_foto_name">-</div>
+                                                <div class="small text-muted" id="preview_foto_size">-</div>
+                                                <span class="badge bg-success-subtle text-success border small mt-1">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Foto berhasil dibaca & siap diunggah
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnHapusFotoRumah">
+                                            <i class="bi bi-trash me-1"></i>Hapus / Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if is_edit and warga and warga.foto_rumah %}
+                            <div class="card p-2 bg-light border mb-3 mt-2" id="existing_foto_box">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small text-muted"><i class="bi bi-image me-1"></i>Foto Rumah Tersimpan Saat Ini:</span>
+                                    <span class="badge bg-success-subtle text-success border small">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Tersimpan di Sistem
+                                    </span>
+                                </div>
+                                <div>
+                                    <img src="{{ url_for('static', filename=warga.foto_rumah_url) }}" alt="Foto Rumah" class="rounded border shadow-sm" style="max-height: 140px; object-fit: cover;">
+                                </div>
+                                <div class="form-text small text-muted mt-1">Pilih file baru di atas jika ingin mengganti foto rumah yang tersimpan.</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary">Batal</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> {{ 'Simpan Perubahan' if is_edit else 'Daftarkan Warga' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Master data keterangan desil (DTKS/BPS)
+    const DESIL_DATA = {
+        1: { kategori: "Sangat Miskin (Kemiskinan Ekstrem)", kelayakan: "Prioritas Utama Bansos (Sangat Berhak)", badge: "bg-danger text-white", layak: true, deskripsi: "Keluarga dalam 10% kelompok ekonomi terendah. Kondisi rumah sangat sederhana / tidak layak huni, prioritas utama bansos." },
+        2: { kategori: "Miskin", kelayakan: "Berhak Menerima Bansos Reguler", badge: "bg-warning text-dark", layak: true, deskripsi: "Keluarga dalam 11-20% terendah. Penghasilan di bawah standar kebutuhan hidup layak minimum." },
+        3: { kategori: "Hampir Miskin", kelayakan: "Berhak Menerima Bansos", badge: "bg-info text-dark", layak: true, deskripsi: "Keluarga dalam 21-30%. Rentan terhadap guncangan harga kebutuhan pangan atau kehilangan pendapatan." },
+        4: { kategori: "Rentan Miskin", kelayakan: "Berhak Bansos Bersyarat", badge: "bg-primary text-white", layak: true, deskripsi: "Keluarga dalam 31-40%. Sedikit di atas garis kemiskinan, rentan jatuh miskin pada situasi krisis." },
+        5: { kategori: "Menengah Bawah", kelayakan: "Tidak Berhak Bansos (Menengah)", badge: "bg-secondary text-white", layak: false, deskripsi: "Keluarga dalam 41-50%. Mampu memenuhi kebutuhan primer harian secara mandiri." },
+        6: { kategori: "Menengah", kelayakan: "Tidak Berhak Bansos (Mandiri)", badge: "bg-secondary text-white", layak: false, deskripsi: "Keluarga dalam 51-60%. Kondisi ekonomi stabil dan berkecukupan." },
+        7: { kategori: "Menengah Cukup", kelayakan: "Tidak Berhak Bansos (Mampu)", badge: "bg-dark text-white", layak: false, deskripsi: "Keluarga dalam 61-70%. Memiliki kapasitas ekonomi di atas rata-rata dengan aset dan fasilitas memadai." },
+        8: { kategori: "Menengah Atas", kelayakan: "Tidak Berhak Bansos (Mampu)", badge: "bg-dark text-white", layak: false, deskripsi: "Keluarga dalam 71-80%. Finansial mapan dengan kepemilikan aset bernilai tinggi." },
+        9: { kategori: "Mampu", kelayakan: "Tidak Berhak Bansos (Sangat Mampu)", badge: "bg-dark text-white", layak: false, deskripsi: "Keluarga dalam 81-90%. Sangat mapan secara finansial dan berpendapatan tinggi." },
+        10: { kategori: "Sangat Mampu / Kaya", kelayakan: "Tidak Berhak Bansos (Golongan Teratas)", badge: "bg-dark text-white", layak: false, deskripsi: "Keluarga dalam 10% teratas nasional. Golongan ekonomi paling kaya dan sejahtera." }
+    };
+
+    // Elemen input data warga
+    const elPenghasilan = document.getElementById("penghasilan");
+    const elTanggungan = document.getElementById("jumlah_tanggungan");
+    const elStatusRumah = document.getElementById("status_rumah");
+    const elLuasTanah = document.getElementById("luas_tanah");
+    const elDayaListrik = document.getElementById("daya_listrik");
+    const elJenisKendaraan = document.getElementById("jenis_kendaraan");
+    const elJumlahKendaraan = document.getElementById("jumlah_kendaraan");
+    const elNilaiAset = document.getElementById("nilai_aset");
+
+    // Elemen input foto rumah
+    const inputFotoRumah = document.getElementById("inputFotoRumah");
+    const hasExistingFoto = document.getElementById("has_existing_foto_rumah");
+    const previewFotoContainer = document.getElementById("preview_foto_container");
+    const previewFotoImg = document.getElementById("preview_foto_img");
+    const previewFotoName = document.getElementById("preview_foto_name");
+    const previewFotoSize = document.getElementById("preview_foto_size");
+    const btnHapusFoto = document.getElementById("btnHapusFotoRumah");
+    const fotoRumahError = document.getElementById("foto_rumah_error");
+    const fotoRumahErrorText = document.getElementById("foto_rumah_error_text");
+
+    // Elemen output desil
+    const elDesilHidden = document.getElementById("desil");
+    const elDesilDisplay = document.getElementById("desil_display");
+    const elWaitingBox = document.getElementById("desil_waiting_box");
+    const elWaitingBadge = document.getElementById("desil_waiting_badge");
+    const elWaitingMsg = document.getElementById("desil_waiting_msg");
+    const elLoadingBox = document.getElementById("desil_loading_box");
+    const elLoadingText = document.getElementById("desil_loading_text");
+    const elErrorBox = document.getElementById("desil_error_box");
+    const elErrorMsg = document.getElementById("desil_error_msg");
+    const elReadyBox = document.getElementById("desil_ready_box");
+    const elBadgeLive = document.getElementById("desil_badge_live");
+    const elKelayakanLive = document.getElementById("desil_kelayakan_live");
+    const elDeskripsiLive = document.getElementById("desil_deskripsi_live");
+    const elPerkapitaLive = document.getElementById("desil_perkapita_live");
+    const elFaktorLive = document.getElementById("desil_faktor_live");
+
+    // Status foto
+    let isFotoValid = (hasExistingFoto && hasExistingFoto.value === "1");
+    let debounceTimer = null;
+
+    function formatRupiah(val) {
+        return "Rp " + Math.round(val).toLocaleString("id-ID");
+    }
+
+    function showFotoError(pesan) {
+        if (fotoRumahError && fotoRumahErrorText) {
+            fotoRumahErrorText.textContent = pesan;
+            fotoRumahError.classList.remove("d-none");
+        }
+        if (inputFotoRumah) inputFotoRumah.classList.add("is-invalid");
+    }
+
+    function clearFotoError() {
+        if (fotoRumahError) {
+            fotoRumahError.classList.add("d-none");
+        }
+        if (inputFotoRumah) inputFotoRumah.classList.remove("is-invalid");
+    }
+
+    // 1. Sembunyikan hasil desil dan tampilkan pesan kelengkapan data
+    function sembunyikanHasilDesil(pesan) {
+        if (elReadyBox) elReadyBox.classList.add("d-none");
+        if (elLoadingBox) elLoadingBox.classList.add("d-none");
+        if (elErrorBox) elErrorBox.classList.add("d-none");
+        if (elWaitingBox) elWaitingBox.classList.remove("d-none");
+
+        if (elDesilHidden) elDesilHidden.value = "";
+        if (elDesilDisplay) {
+            elDesilDisplay.value = "";
+            elDesilDisplay.placeholder = "Menunggu kelengkapan data & foto rumah...";
+        }
+
+        if (elWaitingMsg) {
+            elWaitingMsg.innerHTML = pesan || "Lengkapi seluruh data penghasilan, aset fisik, kelistrikan, dan unggah foto tampak depan rumah untuk menghitung Tingkat Desil Kesejahteraan.";
+        }
+    }
+
+    // 2. Tampilkan status loading / proses
+    function tampilkanLoading(pesan) {
+        if (elReadyBox) elReadyBox.classList.add("d-none");
+        if (elWaitingBox) elWaitingBox.classList.add("d-none");
+        if (elErrorBox) elErrorBox.classList.add("d-none");
+        if (elLoadingBox) elLoadingBox.classList.remove("d-none");
+
+        if (elLoadingText) elLoadingText.textContent = pesan;
+        if (elDesilDisplay) {
+            elDesilDisplay.value = "";
+            elDesilDisplay.placeholder = pesan;
+        }
+    }
+
+    // 3. Tampilkan pesan kesalahan
+    function tampilkanError(pesan) {
+        if (elReadyBox) elReadyBox.classList.add("d-none");
+        if (elLoadingBox) elLoadingBox.classList.add("d-none");
+        if (elWaitingBox) elWaitingBox.classList.add("d-none");
+        if (elErrorBox) elErrorBox.classList.remove("d-none");
+
+        if (elErrorMsg) elErrorMsg.textContent = pesan || "Terjadi kesalahan.";
+        if (elDesilHidden) elDesilHidden.value = "";
+        if (elDesilDisplay) {
+            elDesilDisplay.value = "";
+            elDesilDisplay.placeholder = "Terjadi kesalahan perhitungan.";
+        }
+    }
+
+    // 4. Tampilkan hasil desil yang valid
+    function tampilkanHasilDesil(data) {
+        if (elLoadingBox) elLoadingBox.classList.add("d-none");
+        if (elWaitingBox) elWaitingBox.classList.add("d-none");
+        if (elErrorBox) elErrorBox.classList.add("d-none");
+        if (elReadyBox) elReadyBox.classList.remove("d-none");
+
+        const desil = data.desil;
+        const info = DESIL_DATA[desil] || {
+            kategori: data.kategori || `Desil ${desil}`,
+            kelayakan: data.kelayakan || "Status Bansos",
+            badge: data.badge_class || "bg-primary text-white",
+            layak: data.is_layak_bansos || false,
+            deskripsi: data.deskripsi || ""
+        };
+
+        if (elDesilHidden) elDesilHidden.value = desil;
+        if (elDesilDisplay) elDesilDisplay.value = `Desil ${desil} — ${info.kategori}`;
+
+        if (elBadgeLive) {
+            elBadgeLive.className = `badge px-3 py-2 fs-6 ${info.badge}`;
+            elBadgeLive.textContent = `Desil ${desil} — ${info.kategori}`;
+        }
+
+        if (elKelayakanLive) {
+            elKelayakanLive.className = `badge border ${info.layak ? "bg-success-subtle text-success border-success" : "bg-danger-subtle text-danger border-danger"}`;
+            elKelayakanLive.textContent = info.kelayakan;
+        }
+
+        if (elDeskripsiLive) elDeskripsiLive.textContent = info.deskripsi;
+        if (elPerkapitaLive) elPerkapitaLive.textContent = `${formatRupiah(data.per_kapita || 0)} / jiwa / bulan`;
+        if (elFaktorLive) elFaktorLive.textContent = data.faktor_penentu || "-";
+    }
+
+    // 5. Validasi kelengkapan seluruh data wajib
+    function periksaKelengkapan() {
+        // a. Penghasilan wajib diisi angka >= 0
+        const rawPenghasilan = elPenghasilan ? elPenghasilan.value.trim() : "";
+        if (rawPenghasilan === "" || isNaN(parseFloat(rawPenghasilan)) || parseFloat(rawPenghasilan) < 0) {
+            return { lengkap: false, pesan: "Lengkapi seluruh data penghasilan, aset fisik, kelistrikan, dan unggah foto tampak depan rumah untuk menghitung Tingkat Desil Kesejahteraan." };
+        }
+
+        // b. Status rumah
+        const statusRumah = elStatusRumah ? elStatusRumah.value.trim() : "";
+        if (!statusRumah) {
+            return { lengkap: false, pesan: "Pilih status kepemilikan bangunan tempat tinggal untuk menghitung desil." };
+        }
+
+        // c. Luas bangunan/tanah wajib > 0
+        const rawLuas = elLuasTanah ? elLuasTanah.value.trim() : "";
+        if (rawLuas === "" || isNaN(parseFloat(rawLuas)) || parseFloat(rawLuas) <= 0) {
+            return { lengkap: false, pesan: "Lengkapi perkiraan luas bangunan atau tanah (harus bernilai lebih dari 0 m²)." };
+        }
+
+        // d. Daya listrik PLN
+        const rawDaya = elDayaListrik ? elDayaListrik.value.trim() : "";
+        if (rawDaya === "") {
+            return { lengkap: false, pesan: "Pilih parameter meteran listrik (daya PLN) tempat tinggal." };
+        }
+
+        // e. Jenis kendaraan
+        const jenisKendaraan = elJenisKendaraan ? elJenisKendaraan.value.trim() : "";
+        if (!jenisKendaraan) {
+            return { lengkap: false, pesan: "Pilih jenis kepemilikan kendaraan bermotor." };
+        }
+
+        // f. Jumlah unit kendaraan
+        const rawJmlKendaraan = elJumlahKendaraan ? elJumlahKendaraan.value.trim() : "";
+        if (rawJmlKendaraan === "" || isNaN(parseInt(rawJmlKendaraan)) || parseInt(rawJmlKendaraan) < 0) {
+            return { lengkap: false, pesan: "Lengkapi jumlah unit kendaraan yang dimiliki (minimal 0)." };
+        }
+
+        // g. Foto rumah (Wajib mutlak)
+        if (!isFotoValid) {
+            return { 
+                lengkap: false, 
+                pesan: "Lengkapi seluruh data penghasilan, aset fisik, kelistrikan, dan unggah foto tampak depan rumah untuk menghitung Tingkat Desil Kesejahteraan." 
+            };
+        }
+
+        return { lengkap: true };
+    }
+
+    // 6. Evaluasi dan kalkulasi desil secara otomatis & real-time
+    function evaluasiDesilRealtime(isImmediate = false) {
+        if (debounceTimer) clearTimeout(debounceTimer);
+
+        const delay = isImmediate ? 0 : 250;
+        debounceTimer = setTimeout(function () {
+            const status = periksaKelengkapan();
+
+            if (!status.lengkap) {
+                sembunyikanHasilDesil(status.pesan);
+                return;
+            }
+
+            // Semua data lengkap & foto valid: jalankan proses kalkulasi
+            tampilkanLoading("Menghitung Tingkat Desil Kesejahteraan...");
+
+            const payload = {
+                penghasilan: elPenghasilan.value.trim(),
+                jumlah_tanggungan: elTanggungan ? elTanggungan.value : 0,
+                status_rumah: elStatusRumah ? elStatusRumah.value : "milik_sendiri",
+                luas_tanah: elLuasTanah ? elLuasTanah.value : 36,
+                daya_listrik: elDayaListrik ? elDayaListrik.value : 450,
+                jenis_kendaraan: elJenisKendaraan ? elJenisKendaraan.value : "tidak_ada",
+                jumlah_kendaraan: elJumlahKendaraan ? elJumlahKendaraan.value : 0,
+                nilai_aset: elNilaiAset ? elNilaiAset.value : 0,
+                has_foto: true
+            };
+
+            fetch("{{ url_for('warga.api_hitung_desil') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(function (res) {
+                if (!res.ok) throw new Error("Gagal memanggil API validasi desil.");
+                return res.json();
+            })
+            .then(function (resData) {
+                if (resData.success && resData.lengkap && resData.desil) {
+                    tampilkanHasilDesil(resData);
+                } else {
+                    sembunyikanHasilDesil(resData.pesan || "Data belum lengkap.");
+                }
+            })
+            .catch(function (err) {
+                console.warn("API request gagal, menggunakan kalkulasi lokal:", err);
+                kalkulasiLokalFallback();
+            });
+        }, delay);
+    }
+
+    // 7. Kalkulasi lokal fallback jika server offline/terjadi kendala jaringan
+    function kalkulasiLokalFallback() {
+        const rawPenghasilan = elPenghasilan ? elPenghasilan.value.trim() : "";
+        const penghasilan = parseFloat(rawPenghasilan) || 0;
+        const tanggungan = Math.max(0, parseInt(elTanggungan ? elTanggungan.value : 0) || 0);
+        const statusRumah = (elStatusRumah ? elStatusRumah.value : "milik_sendiri") || "milik_sendiri";
+        const luasTanah = Math.max(0, parseFloat(elLuasTanah ? elLuasTanah.value : 36) || 36);
+        const dayaListrik = parseInt(elDayaListrik ? elDayaListrik.value : 450) || 450;
+        const jenisKendaraan = (elJenisKendaraan ? elJenisKendaraan.value : "tidak_ada") || "tidak_ada";
+        const jumlahKendaraan = Math.max(0, parseInt(elJumlahKendaraan ? elJumlahKendaraan.value : 0) || 0);
+
+        let estimasiAset = 0;
+        if (statusRumah === "milik_sendiri") {
+            const luasEfektif = luasTanah > 0 ? Math.max(luasTanah, 20) : 20;
+            estimasiAset += luasEfektif * 1500000;
+        }
+        if (jenisKendaraan === "motor") {
+            estimasiAset += Math.max(jumlahKendaraan, 1) * 6000000;
+        } else if (jenisKendaraan === "mobil") {
+            estimasiAset += Math.max(jumlahKendaraan, 1) * 75000000;
+        } else if (jenisKendaraan === "motor_dan_mobil") {
+            estimasiAset += Math.max(jumlahKendaraan, 1) * 85000000;
+        }
+
+        const rawAset = elNilaiAset ? parseFloat(elNilaiAset.value) : 0;
+        const nilaiAsetPakai = (rawAset && rawAset > 0) ? rawAset : estimasiAset;
+
+        const perKapita = penghasilan / Math.max(1, tanggungan + 1);
+
+        let dInc = 10;
+        if (perKapita < 600000 || (penghasilan <= 1000000 && tanggungan >= 2)) {
+            dInc = 1;
+        } else if (perKapita < 950000 || penghasilan <= 1800000) {
+            dInc = 2;
+        } else if (perKapita < 1400000 || penghasilan <= 2600000) {
+            dInc = 3;
+        } else if (perKapita < 1900000 || penghasilan <= 3800000) {
+            dInc = 4;
+        } else if (perKapita < 2700000 || penghasilan <= 5000000) {
+            dInc = 5;
+        } else if (perKapita < 3800000 || penghasilan <= 7500000) {
+            dInc = 6;
+        } else if (perKapita < 5500000 || penghasilan <= 10000000) {
+            dInc = 7;
+        } else if (perKapita < 8000000 || penghasilan <= 15000000) {
+            dInc = 8;
+        } else if (perKapita < 13000000 || penghasilan <= 25000000) {
+            dInc = 9;
+        } else {
+            dInc = 10;
+        }
+
+        let dFinal = dInc;
+        let faktor = "";
+
+        if (jenisKendaraan === "mobil" || jenisKendaraan === "motor_dan_mobil" || dayaListrik >= 2200 || nilaiAsetPakai >= 100000000) {
+            dFinal = Math.max(dFinal, 7);
+            if (jenisKendaraan === "mobil" || jenisKendaraan === "motor_dan_mobil") {
+                faktor = "Memiliki mobil pribadi (golongan mampu)";
+            } else if (dayaListrik >= 2200) {
+                faktor = `Listrik ${dayaListrik} VA non-subsidi`;
+            } else {
+                faktor = "Estimasi aset tinggi (≥ Rp 100 Juta)";
+            }
+        } else if (dayaListrik === 1300 || (jenisKendaraan === "motor" && jumlahKendaraan >= 2) || luasTanah >= 100 || nilaiAsetPakai >= 50000000) {
+            dFinal = Math.max(dFinal, 5);
+            if (dayaListrik === 1300) {
+                faktor = "Listrik 1.300 VA non-subsidi (menengah)";
+            } else {
+                faktor = "Kepemilikan aset & motor golongan menengah";
+            }
+        } else if ((statusRumah === "menumpang" || dayaListrik === 0) && penghasilan <= 2000000 && jenisKendaraan === "tidak_ada") {
+            dFinal = Math.min(dFinal, 2);
+            faktor = dayaListrik === 0 ? "Rumah non-PLN (kemiskinan ekstrem)" : "Menumpang tanpa aset rumah";
+        } else {
+            faktor = `Pendapatan ${formatRupiah(perKapita)}/kapita/bln`;
+        }
+
+        const desil = Math.max(1, Math.min(10, dFinal));
+        const info = DESIL_DATA[desil] || DESIL_DATA[1];
+
+        tampilkanHasilDesil({
+            desil: desil,
+            kategori: info.kategori,
+            kelayakan: info.kelayakan,
+            badge_class: info.badge,
+            is_layak_bansos: info.layak,
+            deskripsi: info.deskripsi,
+            per_kapita: perKapita,
+            faktor_penentu: faktor
+        });
+    }
+
+    // 8. Event Listener untuk input foto rumah
+    if (inputFotoRumah) {
+        inputFotoRumah.addEventListener("change", function () {
+            clearFotoError();
+            const file = inputFotoRumah.files && inputFotoRumah.files[0];
+
+            if (!file) {
+                if (hasExistingFoto && hasExistingFoto.value === "1") {
+                    isFotoValid = true;
+                    if (previewFotoContainer) previewFotoContainer.classList.add("d-none");
+                } else {
+                    isFotoValid = false;
+                    if (previewFotoContainer) previewFotoContainer.classList.add("d-none");
+                }
+                evaluasiDesilRealtime();
+                return;
+            }
+
+            // Validasi format ekstensi file
+            const validExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+            const fileName = file.name.toLowerCase();
+            const isValidExt = validExtensions.some(ext => fileName.endsWith(ext));
+
+            if (!isValidExt) {
+                showFotoError("Format file foto rumah tidak didukung! Gunakan format JPG, JPEG, PNG, atau WEBP.");
+                inputFotoRumah.value = "";
+                isFotoValid = false;
+                if (previewFotoContainer) previewFotoContainer.classList.add("d-none");
+                sembunyikanHasilDesil("Format foto rumah tidak valid. Gunakan format JPG, JPEG, PNG, atau WEBP.");
+                return;
+            }
+
+            // Validasi ukuran berkas (maksimal 10 MB)
+            if (file.size <= 0 || file.size > 10 * 1024 * 1024) {
+                showFotoError("Ukuran file tidak valid (maksimal 10 MB dan tidak boleh kosong).");
+                inputFotoRumah.value = "";
+                isFotoValid = false;
+                if (previewFotoContainer) previewFotoContainer.classList.add("d-none");
+                sembunyikanHasilDesil("Ukuran file foto rumah terlalu besar (maksimal 10 MB).");
+                return;
+            }
+
+            // Status dinamis: "Mengunggah foto rumah..."
+            tampilkanLoading("Mengunggah foto rumah...");
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                isFotoValid = true;
+
+                // Tampilkan pratinjau thumbnail
+                if (previewFotoImg) previewFotoImg.src = e.target.result;
+                if (previewFotoName) previewFotoName.textContent = file.name;
+                if (previewFotoSize) {
+                    const sizeInKb = (file.size / 1024).toFixed(1);
+                    previewFotoSize.textContent = `${sizeInKb} KB (${file.type || "Gambar"})`;
+                }
+                if (previewFotoContainer) previewFotoContainer.classList.remove("d-none");
+
+                // Status dinamis lanjut: "Menghitung Tingkat Desil Kesejahteraan..."
+                evaluasiDesilRealtime(true);
+            };
+
+            reader.onerror = function () {
+                isFotoValid = false;
+                showFotoError("Gagal membaca file foto. Silakan pilih berkas foto lain.");
+                if (previewFotoContainer) previewFotoContainer.classList.add("d-none");
+                tampilkanError("Gagal membaca file foto rumah.");
+            };
+
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Tombol hapus / batal foto baru
+    if (btnHapusFoto) {
+        btnHapusFoto.addEventListener("click", function () {
+            if (inputFotoRumah) inputFotoRumah.value = "";
+            clearFotoError();
+            if (previewFotoContainer) previewFotoContainer.classList.add("d-none");
+            isFotoValid = false;
+            if (hasExistingFoto) hasExistingFoto.value = "0";
+            const existingBox = document.getElementById("existing_foto_box");
+            if (existingBox) existingBox.classList.add("d-none");
+            sembunyikanHasilDesil("Lengkapi seluruh data penghasilan, aset fisik, kelistrikan, dan unggah foto tampak depan rumah untuk menghitung Tingkat Desil Kesejahteraan.");
+        });
+    }
+
+    // Pasang listener input & change ke seluruh field terkait untuk pembaruan real-time
+    const fieldsToWatch = [
+        elPenghasilan,
+        elTanggungan,
+        elStatusRumah,
+        elLuasTanah,
+        elDayaListrik,
+        elJenisKendaraan,
+        elJumlahKendaraan,
+        elNilaiAset
+    ];
+
+    fieldsToWatch.forEach(function (field) {
+        if (field) {
+            field.addEventListener("input", function () {
+                const st = periksaKelengkapan();
+                if (!st.lengkap) {
+                    sembunyikanHasilDesil(st.pesan);
+                } else {
+                    evaluasiDesilRealtime();
+                }
+            });
+            field.addEventListener("change", function () {
+                evaluasiDesilRealtime();
+            });
+        }
+    });
+
+    // =========================================================================
+    // FITUR: HYBRID INPUT LUAS BANGUNAN (Pilihan Cepat & Kalkulator P x L)
+    // =========================================================================
+    const containerChips = document.getElementById("containerPilihanCepatLuas");
+    const chipButtons = containerChips ? containerChips.querySelectorAll(".btn-chip-luas") : [];
+    const btnToggleKalkulator = document.getElementById("btnToggleKalkulator");
+    const panelKalkulator = document.getElementById("panelKalkulatorLuas");
+    const btnCloseKalkulator = document.getElementById("btnCloseKalkulator");
+    const btnBatalKalkulator = document.getElementById("btnBatalKalkulator");
+    const inputPanjang = document.getElementById("kalkulator_panjang");
+    const inputLebar = document.getElementById("kalkulator_lebar");
+    const btnHitungLuas = document.getElementById("btnHitungLuas");
+    const boxKalkulatorError = document.getElementById("kalkulator_error");
+    const textKalkulatorError = document.getElementById("kalkulator_error_text");
+    const boxKalkulatorSukses = document.getElementById("kalkulator_sukses");
+    const textKalkulatorSukses = document.getElementById("kalkulator_sukses_text");
+
+    // Fungsi sinkronisasi status aktif chip pilihan cepat dengan nilai input utama
+    function sinkronkanChipPilihanCepat() {
+        if (!elLuasTanah) return;
+        const currentVal = parseFloat(elLuasTanah.value.trim());
+        chipButtons.forEach(function (btn) {
+            const chipVal = parseFloat(btn.getAttribute("data-luas"));
+            if (!isNaN(currentVal) && !isNaN(chipVal) && Math.abs(currentVal - chipVal) < 0.001) {
+                btn.classList.remove("btn-outline-primary");
+                btn.classList.add("btn-primary", "text-white", "active", "fw-semibold");
+            } else {
+                btn.classList.remove("btn-primary", "text-white", "active", "fw-semibold");
+                btn.classList.add("btn-outline-primary");
+            }
+        });
+    }
+
+    // Pasang listener pada chip pilihan cepat
+    chipButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const nilaiLuas = this.getAttribute("data-luas");
+            if (elLuasTanah && nilaiLuas) {
+                elLuasTanah.value = nilaiLuas;
+                sinkronkanChipPilihanCepat();
+                // Trigger event input & change agar sistem desil dan validasi realtime ikut diperbarui
+                elLuasTanah.dispatchEvent(new Event("input", { bubbles: true }));
+                elLuasTanah.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+        });
+    });
+
+    // Perbarui status chip saat pengguna mengetik manual di input utama
+    if (elLuasTanah) {
+        elLuasTanah.addEventListener("input", sinkronkanChipPilihanCepat);
+        elLuasTanah.addEventListener("change", sinkronkanChipPilihanCepat);
+    }
+
+    // Toggle buka/tutup panel kalkulator
+    function togglePanelKalkulator(show) {
+        if (!panelKalkulator) return;
+        const willShow = (typeof show === "boolean") ? show : panelKalkulator.classList.contains("d-none");
+        if (willShow) {
+            panelKalkulator.classList.remove("d-none");
+            sembunyikanNotifKalkulator();
+            if (inputPanjang) inputPanjang.focus();
+        } else {
+            panelKalkulator.classList.add("d-none");
+            sembunyikanNotifKalkulator();
+        }
+    }
+
+    function sembunyikanNotifKalkulator() {
+        if (boxKalkulatorError) boxKalkulatorError.classList.add("d-none");
+        if (boxKalkulatorSukses) boxKalkulatorSukses.classList.add("d-none");
+    }
+
+    function tampilkanErrorKalkulator(pesan) {
+        if (boxKalkulatorSukses) boxKalkulatorSukses.classList.add("d-none");
+        if (boxKalkulatorError && textKalkulatorError) {
+            textKalkulatorError.textContent = pesan;
+            boxKalkulatorError.classList.remove("d-none");
+        }
+    }
+
+    function tampilkanSuksesKalkulator(pesan) {
+        if (boxKalkulatorError) boxKalkulatorError.classList.add("d-none");
+        if (boxKalkulatorSukses && textKalkulatorSukses) {
+            textKalkulatorSukses.textContent = pesan;
+            boxKalkulatorSukses.classList.remove("d-none");
+        }
+    }
+
+    if (btnToggleKalkulator) {
+        btnToggleKalkulator.addEventListener("click", function () {
+            togglePanelKalkulator();
+        });
+    }
+    if (btnCloseKalkulator) {
+        btnCloseKalkulator.addEventListener("click", function () {
+            togglePanelKalkulator(false);
+        });
+    }
+    if (btnBatalKalkulator) {
+        btnBatalKalkulator.addEventListener("click", function () {
+            togglePanelKalkulator(false);
+        });
+    }
+
+    // Eksekusi kalkulasi Panjang x Lebar
+    if (btnHitungLuas) {
+        btnHitungLuas.addEventListener("click", function () {
+            sembunyikanNotifKalkulator();
+
+            const rawPanjang = inputPanjang ? inputPanjang.value.trim() : "";
+            const rawLebar = inputLebar ? inputLebar.value.trim() : "";
+
+            // 1. Validasi tidak boleh kosong
+            if (rawPanjang === "" || rawLebar === "") {
+                tampilkanErrorKalkulator("Panjang dan lebar wajib diisi sebelum melakukan perhitungan.");
+                return;
+            }
+
+            const p = parseFloat(rawPanjang);
+            const l = parseFloat(rawLebar);
+
+            // 2. Validasi angka valid dan positif (> 0)
+            if (isNaN(p) || isNaN(l)) {
+                tampilkanErrorKalkulator("Nilai panjang dan lebar harus berupa angka desimal valid.");
+                return;
+            }
+            if (p <= 0 || l <= 0) {
+                tampilkanErrorKalkulator("Nilai panjang dan lebar harus berupa angka positif lebih dari 0 meter.");
+                return;
+            }
+
+            // 3. Hitung luas: Panjang x Lebar
+            const luasHasil = parseFloat((p * l).toFixed(2));
+            if (isNaN(luasHasil) || !isFinite(luasHasil)) {
+                tampilkanErrorKalkulator("Hasil perhitungan tidak valid.");
+                return;
+            }
+
+            // 4. Masukkan ke input utama
+            if (elLuasTanah) {
+                elLuasTanah.value = luasHasil;
+                sinkronkanChipPilihanCepat();
+                elLuasTanah.dispatchEvent(new Event("input", { bubbles: true }));
+                elLuasTanah.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+
+            // 5. Tampilkan format hasil yang mudah dibaca
+            tampilkanSuksesKalkulator(`Luas bangunan: ${luasHasil} m²`);
+
+            // Tutup panel setelah jeda singkat agar pengguna melihat feedback
+            setTimeout(function () {
+                togglePanelKalkulator(false);
+            }, 1200);
+        });
+    }
+
+    // Inisialisasi sinkronisasi chip pada saat halaman pertama kali dimuat
+    sinkronkanChipPilihanCepat();
+
+    // Jalankan kalkulasi pertama kali saat halaman dimuat
+    evaluasiDesilRealtime(true);
+});
+</script>
+{% endblock %}

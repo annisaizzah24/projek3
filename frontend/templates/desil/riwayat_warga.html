@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Riwayat Pengajuan Desil Saya - Sociovault{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1">
+            <i class="bi bi-clock-history text-primary me-2"></i>Riwayat Pengajuan Perubahan Desil
+        </h3>
+        <p class="text-muted mb-0">Pantau status verifikasi dan tindak lanjut permohonan sanggah desil Anda</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+        <a href="{{ url_for('desil.ajukan_perubahan') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Ajukan Permohonan Baru
+        </a>
+    </div>
+</div>
+
+{% if daftar_pengajuan %}
+<div class="row g-4">
+    {% for item in daftar_pengajuan %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border font-monospace">#REQ-{{ item.id }}</span>
+                    <span class="text-muted small">
+                        <i class="bi bi-calendar3 me-1"></i> Diajukan: {{ item.tanggal_pengajuan.strftime('%d/%m/%Y %H:%M') }}
+                    </span>
+                </div>
+                <div>
+                    {% if item.status == 'menunggu' %}
+                        <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                            <i class="bi bi-clock-history me-1"></i> Menunggu Verifikasi Petugas
+                        </span>
+                    {% elif item.status == 'disetujui' %}
+                        <span class="badge bg-success px-3 py-2 fs-6">
+                            <i class="bi bi-check-circle-fill me-1"></i> Disetujui
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger px-3 py-2 fs-6">
+                            <i class="bi bi-x-circle-fill me-1"></i> Ditolak
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4 align-items-center">
+                    <!-- Foto Rumah yang Diunggah -->
+                    <div class="col-md-3 text-center">
+                        <div class="position-relative rounded-3 overflow-hidden border shadow-sm">
+                            <img src="{{ url_for('static', filename=item.foto_rumah_baru) }}" alt="Foto Rumah Pengajuan" class="img-fluid rounded" style="max-height: 160px; width: 100%; object-fit: cover;">
+                            <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white py-1 px-2 small">
+                                <i class="bi bi-camera me-1"></i> Bukti Foto Rumah
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Perbandingan Desil & Penghasilan -->
+                    <div class="col-md-5">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="row text-center align-items-center">
+                                <div class="col-5">
+                                    <div class="text-muted small">Desil Sebelumnya</div>
+                                    <span class="badge bg-{{ item.keterangan_desil_lama.badge_class }} fs-6 px-3 py-1 mt-1">
+                                        {{ item.keterangan_desil_lama.label }}
+                                    </span>
+                                    <div class="small fw-semibold text-muted mt-1">{{ item.keterangan_desil_lama.kategori }}</div>
+                                </div>
+                                <div class="col-2">
+                                    <i class="bi bi-arrow-right fs-3 text-primary"></i>
+                                </div>
+                                <div class="col-5">
+                                    <div class="text-muted small">Desil Diajukan</div>
+                                    <span class="badge bg-{{ item.keterangan_desil_diajukan.badge_class }} fs-6 px-3 py-1 mt-1">
+                                        {{ item.keterangan_desil_diajukan.label }}
+                                    </span>
+                                    <div class="small fw-bold text-dark mt-1">{{ item.keterangan_desil_diajukan.kategori }}</div>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between small text-muted">
+                                <span>Gaji Terkini yang Dilaporkan:</span>
+                                <span class="fw-bold text-dark">{{ item.penghasilan_terkini|rupiah }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mt-1">
+                                <span>Jumlah Tanggungan:</span>
+                                <span class="fw-semibold text-dark">{{ item.jumlah_tanggungan }} Orang</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alasan & Catatan Petugas -->
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <div class="text-muted small fw-semibold"><i class="bi bi-chat-left-quote me-1"></i>Alasan Pengajuan:</div>
+                            <div class="small text-dark p-2 bg-white rounded border fst-italic">
+                                "{{ item.alasan_pengajuan }}"
+                            </div>
+                        </div>
+
+                        {% if item.status != 'menunggu' %}
+                        <div class="mt-2">
+                            <div class="text-muted small fw-semibold">
+                                <i class="bi bi-person-check me-1"></i>Catatan Petugas ({{ item.petugas.nama if item.petugas else 'Petugas' }}):
+                            </div>
+                            <div class="small p-2 rounded {% if item.status == 'disetujui' %}bg-success-subtle text-success border border-success{% else %}bg-danger-subtle text-danger border border-danger{% endif %}">
+                                {{ item.catatan_petugas or 'Tidak ada catatan.' }}
+                            </div>
+                            <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+                                Diverifikasi: {{ item.tanggal_verifikasi.strftime('%d/%m/%Y %H:%M') if item.tanggal_verifikasi else '-' }}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info small py-2 mb-0 mt-2">
+                            <i class="bi bi-hourglass-split me-1"></i> Berkas sedang dalam antrean pemeriksaan tim verifikator kelurahan.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card border-0 shadow-sm rounded-3 py-5 text-center">
+    <div class="card-body">
+        <i class="bi bi-folder2-open text-muted display-3 mb-3"></i>
+        <h5 class="fw-bold text-dark">Belum Ada Riwayat Pengajuan Desil</h5>
+        <p class="text-muted small mb-4" style="max-width: 500px; margin: 0 auto;">
+            Jika data kesejahteraan atau desil Anda saat ini tidak sesuai (misal: tergolong miskin namun terdaftar Desil 7/10 sehingga tidak bisa mendapatkan bantuan), Anda dapat mengajukan permohonan perubahan desil.
+        </p>
+        <a href="{{ url_for('desil.ajukan_perubahan') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-repeat me-1"></i> Ajukan Perubahan Desil Sekarang
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

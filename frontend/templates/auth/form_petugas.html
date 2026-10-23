@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}{% if is_edit %}Edit Akun Pengguna{% else %}Tambah Petugas Baru{% endif %} - Sociovault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">
+                    <i class="bi {% if is_edit %}bi-person-gear{% else %}bi-person-plus-fill{% endif %} text-primary me-2"></i>
+                    {% if is_edit %}Edit Akun Pengguna{% else %}Tambah Akun Petugas{% endif %}
+                </h3>
+                <p class="text-muted mb-0">
+                    {% if is_edit %}Perbarui informasi dan role akses akun petugas atau administrator{% else %}Daftarkan akun petugas verifikasi atau administrator baru{% endif %}
+                </p>
+            </div>
+            <a href="{{ url_for('auth.daftar_petugas') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    {{ render_field(form.nama, placeholder="Contoh: Siti Rahmawati") }}
+                    {{ render_field(form.username, placeholder="Contoh: petugas_siti", help_text="Digunakan untuk login ke sistem, harus unik.") }}
+                    {{ render_field(form.password, placeholder="Minimal 6 karakter" if not is_edit else "Kosongkan bila password tidak diubah") }}
+                    {{ render_field(form.role, class_="form-select") }}
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{{ url_for('auth.daftar_petugas') }}" class="btn btn-outline-secondary">Batal</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> {% if is_edit %}Simpan Perubahan{% else %}Simpan Akun{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}403 Akses Ditolak - Sociovault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center pt-5">
+    <div class="col-md-6 text-center">
+        <div class="display-1 text-danger fw-bold mb-3"><i class="bi bi-shield-x"></i> 403</div>
+        <h3 class="fw-bold text-dark">Akses Ditolak</h3>
+        <p class="text-muted mb-4">
+            Mohon maaf, peran Anda (<strong>{{ current_user.role if current_user.is_authenticated else 'Tamu' }}</strong>) 
+            tidak memiliki wewenang atau hak akses untuk membuka halaman atau fitur ini.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('auth.login') }}" class="btn btn-primary">
+                <i class="bi bi-house-door me-1"></i> Kembali ke Dashboard
+            </a>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Halaman Sebelumnya
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Program Bantuan Sosial - Sociovault{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-gift-fill me-2 text-primary"></i>Program Bantuan Sosial</h3>
+        <p class="text-muted mb-0">Kelola master kriteria program bantuan sosial pemerintah dan ambang batas desil</p>
+    </div>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('program.tambah_program') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> + Tambah Program Baru
+    </a>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    {% for p in programs %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm rounded-3 {% if not p.is_active %}opacity-75 bg-light{% endif %}">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 me-1">
+                            ID: {{ p.id }}
+                        </span>
+                        {% if p.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aktif</span>
+                        {% else %}
+                            <span class="badge bg-secondary px-2 py-1">Nonaktif</span>
+                        {% endif %}
+                    </div>
+                    {% if current_user.is_admin %}
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><a class="dropdown-item" href="{{ url_for('program.edit_program', id=p.id) }}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                            <li>
+                                <form method="POST" action="{{ url_for('program.nonaktifkan_program', id=p.id) }}">
+                                    <button type="submit" class="dropdown-item text-warning">
+                                        <i class="bi {{ 'bi-pause-circle' if p.is_active else 'bi-play-circle' }} me-2"></i>
+                                        {{ 'Nonaktifkan Program' if p.is_active else 'Aktifkan Program' }}
+                                    </button>
+                                </form>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="{{ url_for('program.hapus_program', id=p.id) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus program ini?');">
+                                    <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Hapus Program</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h5 class="card-title fw-bold text-dark mb-2">{{ p.nama_program }}</h5>
+                <p class="card-text text-muted small flex-grow-1">{{ p.deskripsi or 'Tidak ada deskripsi rinci.' }}</p>
+
+                <div class="bg-light p-3 rounded-2 mt-3 mb-3 border">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Batas Maksimal Desil:</span>
+                        <strong class="text-primary small">
+                            {% if p.kriteria_desil_max %}
+                                &le; Desil {{ p.kriteria_desil_max }} ({{ desil_info[p.kriteria_desil_max]['kategori'] }})
+                            {% else %}
+                                Tanpa Batas Desil
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Batas Gaji Maksimal:</span>
+                        <strong class="text-dark small">{{ p.kriteria_penghasilan_max|rupiah }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Syarat Min. Tanggungan:</span>
+                        <strong class="text-dark small">&ge; {{ p.kriteria_tanggungan_min }} orang</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Batas Aset Maksimal:</span>
+                        <strong class="text-dark small">
+                            {{ p.kriteria_aset_max|rupiah if p.kriteria_aset_max is not none else 'Tanpa Batas' }}
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="bi bi-clock-history me-1"></i> {{ p.verifikasi_list|length }} verifikasi
+                    </small>
+                    <a href="{{ url_for('verifikasi.riwayat_verifikasi', program_id=p.id) }}" class="btn btn-outline-primary btn-sm">
+                        Lihat Riwayat <i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+        Belum ada data program bantuan sosial yang terdaftar.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

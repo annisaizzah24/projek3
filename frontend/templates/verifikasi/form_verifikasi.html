@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Proses Evaluasi Verifikasi - Sociovault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1"><i class="bi bi-cpu-fill text-primary me-2"></i>Evaluasi Verifikasi Bansos</h3>
+                <p class="text-muted mb-0">Rule Engine akan otomatis mengevaluasi penghasilan, tanggungan, dan aset warga</p>
+            </div>
+            <a href="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Riwayat
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('verifikasi.mulai_verifikasi') }}">
+                    {{ form.hidden_tag() }}
+
+                    {{ render_field(form.id_warga, class_="form-select", help_text="Data profil warga akan dievaluasi secara otomatis terhadap kriteria program.") }}
+
+                    {{ render_field(form.id_program, class_="form-select", help_text="Pilih program bantuan sosial yang diajukan.") }}
+
+                    {{ render_field(form.catatan, rows="2", placeholder="Catatan hasil verifikasi berkas fisik atau catatan survei awal...") }}
+
+                    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                        <div>
+                            <small>
+                                <strong>Ketentuan Rule Engine:</strong>
+                                Jika warga sudah pernah terdaftar (status Layak atau Perlu Ditinjau) pada program yang sama, sistem otomatis menolak proses duplikasi. Record verifikasi baru disimpan dengan status otomatis sistem dan menunggu pengesahan final oleh petugas.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="btn btn-outline-secondary">Batal</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-lightning-charge me-1"></i> Jalankan Evaluasi Verifikasi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

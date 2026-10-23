@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% from "macros.html" import status_badge %}
+
+{% block title %}Portal Warga - Status Bantuan Sosial & Desil Kesejahteraan{% endblock %}
+
+{% block content %}
+<!-- Header Portal Warga -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 bg-primary text-white rounded-3 shadow-sm overflow-hidden">
+            <div class="card-body p-4 p-md-5 position-relative">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="badge bg-white text-primary mb-2 px-3 py-1 fw-bold">
+                            <i class="bi bi-person-check-fill me-1"></i> Akun Warga Terdaftar
+                        </div>
+                        <h2 class="fw-bold mb-2">Selamat Datang, {{ current_user.nama }}!</h2>
+                        <p class="mb-0 text-white-50 fs-6">
+                            Pantau transparansi kategori desil kesejahteraan keluarga, status kelayakan permohonan bansos, dan ajukan perubahan desil secara mandiri.
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <div class="d-inline-flex align-items-center bg-white bg-opacity-25 rounded-pill px-3 py-2 text-white">
+                            <i class="bi bi-clock-history me-2 fs-5"></i>
+                            <span class="small fw-semibold">Sistem Evaluasi Aktif</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Data Kependudukan, Foto Rumah & Keterangan Desil -->
+    <div class="col-lg-4">
+        <!-- Kartu Identitas Kependudukan, Desil & Foto Rumah -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-person-lines-fill text-primary me-2"></i>Data Kependudukan & Desil
+                </h6>
+                {% if warga %}
+                <span class="badge bg-success-subtle text-success border border-success px-2 py-1">
+                    <i class="bi bi-patch-check me-1"></i> Terhubung
+                </span>
+                {% else %}
+                <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">
+                    <i class="bi bi-exclamation-circle me-1"></i> Belum Terhubung
+                </span>
+                {% endif %}
+            </div>
+            <div class="card-body p-4">
+                {% if warga %}
+                <!-- Foto Fisik Rumah Warga -->
+                <div class="mb-3 text-center">
+                    <div class="position-relative d-inline-block rounded-3 overflow-hidden border shadow-sm w-100">
+                        <img src="{{ url_for('static', filename=warga.foto_rumah_url) }}" alt="Foto Rumah Warga" class="img-fluid rounded" style="height: 180px; width: 100%; object-fit: cover;">
+                        <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white py-1 px-2 small d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-camera me-1"></i> Foto Rumah Tinggal</span>
+                            <span class="badge bg-light text-dark font-monospace" style="font-size: 0.65rem;">DTKS Terdaftar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desil Kesejahteraan & Keterangan -->
+                <div class="p-3 bg-light rounded-3 border mb-3">
+                    <div class="text-muted small fw-semibold mb-1">Klasifikasi Desil Saat Ini:</div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-{{ warga.keterangan_desil.badge_class }} fs-5 px-3 py-1">
+                            {{ warga.keterangan_desil.label }}
+                        </span>
+                        <span class="fw-bold text-dark fs-6">{{ warga.keterangan_desil.kategori }}</span>
+                    </div>
+                    <p class="small text-muted mb-2" style="font-size: 0.8rem;">
+                        {{ warga.keterangan_desil.deskripsi }}
+                    </p>
+                    <div class="d-flex align-items-center small fw-semibold {% if warga.keterangan_desil.is_layak_bansos %}text-success{% else %}text-danger{% endif %}">
+                        <i class="bi {% if warga.keterangan_desil.is_layak_bansos %}bi-check-circle-fill{% else %}bi-x-octagon-fill{% endif %} me-1"></i>
+                        {{ warga.keterangan_desil.kelayakan }}
+                    </div>
+                </div>
+
+                <!-- Callout Sanggah / Pengajuan Perubahan Desil -->
+                <div class="card border border-warning bg-warning bg-opacity-10 rounded-3 p-3 mb-3">
+                    <div class="d-flex gap-2">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-4 flex-shrink-0"></i>
+                        <div>
+                            <div class="fw-bold text-dark small mb-1">Data Desil Tidak Sesuai Kondisi Riil?</div>
+                            <p class="text-muted small mb-2" style="font-size: 0.78rem;">
+                                Jika keluarga Anda tergolong miskin namun sistem mencatat desil tinggi (misal <strong>Desil 7 atau 10</strong>) sehingga bantuan tertolak, Anda dapat mengajukan <strong>Perubahan Desil</strong> dengan melampirkan foto rumah terkini dan slip penghasilan riil.
+                            </p>
+                            <a href="{{ url_for('desil.ajukan_perubahan') }}" class="btn btn-warning btn-sm fw-bold text-dark w-100">
+                                <i class="bi bi-arrow-repeat me-1"></i> Ajukan Perubahan Desil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Profil Warga -->
+                <div class="mb-2 pb-2 border-bottom">
+                    <div class="text-muted small">Nomor NIK KTP:</div>
+                    <div class="font-monospace fw-bold text-primary fs-6">{{ warga.nik }}</div>
+                </div>
+                <div class="mb-2 pb-2 border-bottom">
+                    <div class="text-muted small">Kartu Keluarga (KK):</div>
+                    <div class="fw-semibold text-dark">{{ warga.keluarga.nomor_kk }}</div>
+                    <div class="small text-muted">Kepala Keluarga: {{ warga.keluarga.kepala_keluarga }}</div>
+                </div>
+                <div class="mb-3 pb-2 border-bottom">
+                    <div class="text-muted small">Alamat Domisili:</div>
+                    <div class="text-dark small">{{ warga.alamat }}</div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Gaji / Penghasilan</div>
+                            <div class="fw-bold text-dark small">{{ warga.penghasilan|rupiah }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Jumlah Tanggungan</div>
+                            <div class="fw-bold text-dark small">{{ warga.jumlah_tanggungan }} Orang</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Estimasi Nilai Aset</div>
+                            <div class="fw-bold text-dark small">{{ warga.nilai_aset|rupiah }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-person-exclamation text-warning display-4 mb-2"></i>
+                    <p class="small text-muted mb-3">
+                        NIK Anda belum terhubung atau belum terdaftar dalam master data warga kelurahan.
+                    </p>
+                    <div class="alert alert-info small text-start mb-0">
+                        <i class="bi bi-info-circle me-1"></i> Pastikan NIK yang Anda daftarkan sesuai dengan KTP resmi agar sistem dapat mengevaluasi permohonan bansos secara otomatis.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Bantuan & Informasi Desil -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-question-circle text-primary me-2"></i>Ketentuan Desil Bantuan</h6>
+                <p class="text-muted small mb-3">
+                    Pemerintah menyalurkan bansos berbasis desil Regsosek / DTKS:
+                </p>
+                <div class="small text-muted">
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge bg-danger me-2">Desil 1</span> Sangat Miskin (Prioritas Semua Bansos)
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge bg-warning text-dark me-2">Desil 2</span> Miskin (Penerima Bansos PKH/BPNT)
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge bg-info text-dark me-2">Desil 3</span> Hampir Miskin (Layak Bansos)
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge bg-primary me-2">Desil 4</span> Rentan Miskin (Bansos Bersyarat)
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-secondary me-2">Desil 5-10</span> Menengah / Mampu (Tidak Berhak)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Status Pengajuan Desil, Status Bansos & Katalog Program -->
+    <div class="col-lg-8">
+        <!-- Status Pengajuan Perubahan Desil Saya -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-arrow-repeat text-primary me-2"></i>Status Pengajuan Perubahan Desil Saya
+                </h5>
+                <a href="{{ url_for('desil.ajukan_perubahan') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Ajukan Baru
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if riwayat_desil %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">No. Pengajuan</th>
+                                <th>Perubahan Desil</th>
+                                <th>Foto Rumah Baru</th>
+                                <th>Gaji Dilaporkan</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in riwayat_desil %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold font-monospace text-primary">#REQ-{{ req.id }}</div>
+                                    <div class="small text-muted">{{ req.tanggal_pengajuan.strftime('%d/%m/%Y') }}</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="badge bg-{{ req.keterangan_desil_lama.badge_class }}">{{ req.keterangan_desil_lama.label }}</span>
+                                        <i class="bi bi-arrow-right small text-muted"></i>
+                                        <span class="badge bg-{{ req.keterangan_desil_diajukan.badge_class }}">{{ req.keterangan_desil_diajukan.label }}</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">{{ req.keterangan_desil_diajukan.kategori }}</div>
+                                </td>
+                                <td>
+                                    <div class="rounded border overflow-hidden shadow-sm" style="width: 70px; height: 45px;">
+                                        <img src="{{ url_for('static', filename=req.foto_rumah_baru) }}" alt="Foto Rumah" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark small">{{ req.penghasilan_terkini|rupiah }}</div>
+                                    <div class="small text-muted">{{ req.jumlah_tanggungan }} Tanggungan</div>
+                                </td>
+                                <td>
+                                    {% if req.status == 'menunggu' %}
+                                        <span class="badge bg-warning text-dark px-2 py-1">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Verifikasi
+                                        </span>
+                                    {% elif req.status == 'disetujui' %}
+                                        <span class="badge bg-success px-2 py-1">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Disetujui
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger px-2 py-1">
+                                            <i class="bi bi-x-circle-fill me-1"></i> Ditolak
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('desil.detail_pengajuan', id=req.id) }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-eye me-1"></i> Rincian
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-4 text-center">
+                    <p class="text-muted small mb-2">Belum pernah mengajukan permohonan perubahan desil.</p>
+                    <a href="{{ url_for('desil.ajukan_perubahan') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil-square me-1"></i> Ajukan Perubahan Desil Jika Data Salah
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Status Verifikasi Bansos Saya -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-file-earmark-medical-fill text-primary me-2"></i>Status Verifikasi Bantuan Sosial Saya
+                </h5>
+                <span class="badge bg-primary-subtle text-primary border px-2 py-1">
+                    {{ riwayat|length }} Pengajuan Terdaftar
+                </span>
+            </div>
+            <div class="card-body p-0">
+                {% if riwayat %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Program Bansos</th>
+                                <th>Evaluasi Sistem</th>
+                                <th>Keputusan Final Petugas</th>
+                                <th>Tanggal</th>
+                                <th class="text-end pe-4">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in riwayat %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">{{ item.program.nama_program }}</div>
+                                    <div class="small text-muted">Maksimal Desil: Desil {{ item.program.kriteria_desil_max or '-' }}</div>
+                                </td>
+                                <td>
+                                    {{ status_badge(item.status_otomatis) }}
+                                </td>
+                                <td>
+                                    {% if item.status_final %}
+                                        {{ status_badge(item.status_final) }}
+                                        {% if item.catatan_petugas %}
+                                        <div class="small text-muted mt-1 text-truncate" style="max-width: 180px;" title="{{ item.catatan_petugas }}">
+                                            <i class="bi bi-chat-left-text me-1"></i>{{ item.catatan_petugas }}
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning border px-2 py-1">
+                                            <i class="bi bi-clock me-1"></i> Menunggu Konfirmasi
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">
+                                    {{ item.tanggal_verifikasi.strftime('%d/%m/%Y') if item.tanggal_verifikasi else '-' }}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('verifikasi.detail_verifikasi', id=item.id) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-search me-1"></i> Rincian Audit
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-folder-x text-muted display-4 mb-2"></i>
+                    <h6 class="fw-bold text-dark">Belum Ada Riwayat Verifikasi</h6>
+                    <p class="text-muted small mb-0">
+                        Data Anda belum diajukan dalam proses evaluasi verifikasi program bantuan sosial apapun.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Program Bansos Aktif yang Tersedia -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-gift-fill text-primary me-2"></i>Katalog Program Bantuan Sosial Aktif
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    {% for p in daftar_program %}
+                    <div class="col-md-6">
+                        <div class="card h-100 border rounded-3 p-3 bg-light bg-opacity-50">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold text-dark mb-0">{{ p.nama_program }}</h6>
+                                <span class="badge bg-success-subtle text-success border border-success">Aktif</span>
+                            </div>
+                            <p class="small text-muted mb-3">{{ p.deskripsi or 'Program bantuan kesejahteraan sosial bagi keluarga pra-sejahtera.' }}</p>
+                            <div class="mt-auto small border-top pt-2">
+                                <div class="d-flex justify-content-between text-muted mb-1">
+                                    <span>Batas Maksimal Desil:</span>
+                                    <span class="fw-bold text-primary">
+                                        {% if p.kriteria_desil_max %}
+                                            &le; Desil {{ p.kriteria_desil_max }} ({{ DESIL_INFO[p.kriteria_desil_max]['kategori'] }})
+                                        {% else %}
+                                            Semua Desil
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted mb-1">
+                                    <span>Batas Maks. Penghasilan:</span>
+                                    <span class="fw-semibold text-dark">&le; {{ p.kriteria_penghasilan_max|rupiah }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted mb-1">
+                                    <span>Syarat Min. Tanggungan:</span>
+                                    <span class="fw-semibold text-dark">&ge; {{ p.kriteria_tanggungan_min }} Orang</span>
+                                </div>
+                                {% if p.kriteria_aset_max %}
+                                <div class="d-flex justify-content-between text-muted">
+                                    <span>Batas Kepemilikan Aset:</span>
+                                    <span class="fw-semibold text-dark">&le; {{ p.kriteria_aset_max|rupiah }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12 text-center text-muted py-3">
+                        Tidak ada program bantuan yang sedang aktif saat ini.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

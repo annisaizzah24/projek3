@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Kelola Petugas - Sociovault{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-person-gear text-primary me-2"></i>Kelola Petugas & Administrator</h3>
+        <p class="text-muted mb-0">Manajemen akun pengguna sistem dan hak akses role</p>
+    </div>
+    <a href="{{ url_for('auth.tambah_petugas') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus me-1"></i> + Tambah Petugas Baru
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">ID</th>
+                        <th>Nama Lengkap</th>
+                        <th>Username</th>
+                        <th>Role / Peran</th>
+                        <th>Waktu Dibuat</th>
+                        <th class="text-end pe-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in daftar_user %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-muted">#{{ u.id }}</td>
+                        <td class="fw-semibold text-dark">{{ u.nama }}</td>
+                        <td class="font-monospace text-primary">{{ u.username }}</td>
+                        <td>
+                            {% if u.role == 'admin' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">ADMINISTRATOR</span>
+                            {% elif u.role == 'petugas_verifikasi' %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">PETUGAS VERIFIKASI</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">{{ u.role|upper }}</span>
+                            {% endif %}
+                        </td>
+                        <td><small class="text-muted">{{ u.created_at.strftime('%d-%m-%Y') if u.created_at else '-' }}</small></td>
+                        <td class="text-end pe-3">
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <a href="{{ url_for('auth.edit_petugas', id=u.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit Akun">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if current_user.id != u.id %}
+                                <form method="POST" action="{{ url_for('auth.hapus_petugas', id=u.id) }}" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun {{ u.nama }}?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Akun">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">Akun Anda</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-people fs-2 d-block mb-1"></i>
+                            Tidak ada akun petugas atau administrator.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

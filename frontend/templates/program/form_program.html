@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}{{ 'Edit Program Bantuan' if is_edit else 'Tambah Program Bantuan' }} - Sociovault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h3 class="fw-bold mb-1">
+                    <i class="bi {{ 'bi-pencil-square' if is_edit else 'bi-plus-circle-fill' }} text-primary me-2"></i>
+                    {{ 'Edit Master Program' if is_edit else 'Tambah Master Program Bantuan' }}
+                </h3>
+                <p class="text-muted mb-0">Tentukan kriteria objektif batas desil, penghasilan, dan aset untuk Rule Engine</p>
+            </div>
+            <a href="{{ url_for('program.daftar_program') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ render_field(form.nama_program, placeholder="Contoh: Program Keluarga Harapan (PKH)") }}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ render_field(form.kriteria_desil_max, class_="form-select", help_text="Warga dengan desil melebihi batas ini otomatis dinilai tidak layak.") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ render_field(form.kriteria_penghasilan_max, placeholder="Contoh: 2000000", help_text="Warga berpenghasilan di atas batas ini otomatis dinilai tidak layak.") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ render_field(form.kriteria_tanggungan_min, placeholder="0", help_text="Batas minimal jumlah tanggungan keluarga.") }}
+                        </div>
+
+                        <div class="col-md-6">
+                            {{ render_field(form.kriteria_aset_max, placeholder="Contoh: 15000000 (Kosongkan jika bebas)", help_text="Batas kepemilikan aset maksimal yang diizinkan (opsional).") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ render_field(form.deskripsi, rows="3", placeholder="Penjelasan rincian program bantuan sosial...") }}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('program.daftar_program') }}" class="btn btn-outline-secondary">Batal</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> {{ 'Simpan Perubahan' if is_edit else 'Simpan Program' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

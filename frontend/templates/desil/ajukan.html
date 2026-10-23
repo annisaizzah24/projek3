@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_field %}
+
+{% block title %}Pengajuan Perubahan Desil - Sociovault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 mb-4">
+        <div class="card border-0 bg-primary text-white rounded-3 shadow-sm overflow-hidden">
+            <div class="card-body p-4 p-md-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <div class="badge bg-white text-primary mb-2 px-3 py-1 fw-bold">
+                            <i class="bi bi-arrow-repeat me-1"></i> Layanan Sanggah Kesejahteraan
+                        </div>
+                        <h3 class="fw-bold mb-1">Formulir Pengajuan Perubahan Desil</h3>
+                        <p class="mb-0 text-white-50">
+                            Ajukan pembaruan kategori desil jika data saat ini tidak sesuai kondisi riil ekonomi keluarga Anda (contoh: tergolong miskin namun terdata Desil 7/10).
+                        </p>
+                    </div>
+                    <div>
+                        {% if current_user.is_warga %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('desil.daftar_pengajuan') }}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Daftar Pengajuan
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kolom Kiri: Profil & Desil Saat Ini -->
+    <div class="col-lg-4 mb-4">
+        <!-- Kartu Data Saat Ini -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-person-bounding-box text-primary me-2"></i>Data Warga & Desil Saat Ini
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-3">
+                    <div class="position-relative d-inline-block rounded-3 overflow-hidden border shadow-sm" style="max-width: 100%;">
+                        <img src="{{ url_for('static', filename=warga.foto_rumah_url) }}" alt="Foto Rumah Warga" class="img-fluid rounded" style="max-height: 180px; object-fit: cover; width: 100%;">
+                        <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white py-1 px-2 small">
+                            <i class="bi bi-camera me-1"></i> Foto Rumah Terdaftar
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3 pb-2 border-bottom">
+                    <div class="text-muted small">Nama Warga:</div>
+                    <div class="fw-bold text-dark fs-6">{{ warga.nama }}</div>
+                    <div class="font-monospace text-primary small">NIK: {{ warga.nik }}</div>
+                </div>
+
+                <div class="mb-3 pb-2 border-bottom">
+                    <div class="text-muted small">Status Desil Saat Ini:</div>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="badge bg-{{ warga.keterangan_desil.badge_class }} fs-6 px-2 py-1">
+                            {{ warga.keterangan_desil.label }}
+                        </span>
+                        <span class="fw-bold text-dark small">{{ warga.keterangan_desil.kategori }}</span>
+                    </div>
+                    <div class="small mt-1 {% if warga.keterangan_desil.is_layak_bansos %}text-success{% else %}text-danger{% endif %} fw-semibold">
+                        <i class="bi {% if warga.keterangan_desil.is_layak_bansos %}bi-check-circle-fill{% else %}bi-exclamation-octagon-fill{% endif %} me-1"></i>
+                        {{ warga.keterangan_desil.kelayakan }}
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Gaji Terdata</div>
+                            <div class="fw-bold text-dark small">{{ warga.penghasilan|rupiah }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center">
+                            <div class="text-muted small" style="font-size: 0.75rem;">Tanggungan</div>
+                            <div class="fw-bold text-dark small">{{ warga.jumlah_tanggungan }} Orang</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if warga.desil and warga.desil >= 5 %}
+                <div class="alert alert-warning small p-2 mb-0 mt-3">
+                    <i class="bi bi-info-circle-fill me-1"></i> <strong>Pemberitahuan:</strong> Desil {{ warga.desil }} tergolong keluarga mampu/menengah sehingga tidak lolos otomatis evaluasi bantuan sosial.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Panduan Klasifikasi Target Desil -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Panduan Kategori Desil Bansos
+                </h6>
+            </div>
+            <div class="card-body p-3 small">
+                <div class="mb-2 p-2 rounded bg-danger bg-opacity-10 border border-danger border-opacity-25">
+                    <div class="fw-bold text-danger"><i class="bi bi-shield-fill-check me-1"></i>Desil 1 — Sangat Miskin</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">Rumah tidak layak huni (bilik bambu/tanah), penghasilan sangat rendah / tidak tetap. Prioritas utama bansos.</div>
+                </div>
+                <div class="mb-2 p-2 rounded bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                    <div class="fw-bold text-dark"><i class="bi bi-shield-fill-check me-1"></i>Desil 2 — Miskin</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">Rumah semi permanen sederhana, berhak menerima bantuan reguler PKH/Sembako.</div>
+                </div>
+                <div class="mb-2 p-2 rounded bg-info bg-opacity-10 border border-info border-opacity-25">
+                    <div class="fw-bold text-primary"><i class="bi bi-shield-fill-check me-1"></i>Desil 3 — Hampir Miskin</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">Keluarga rentan guncangan ekonomi, layak menerima bantuan pangan atau PKH.</div>
+                </div>
+                <div class="p-2 rounded bg-primary bg-opacity-10 border border-primary border-opacity-25">
+                    <div class="fw-bold text-primary"><i class="bi bi-shield-fill-check me-1"></i>Desil 4 — Rentan Miskin</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">Keluarga di atas garis kemiskinan namun butuh perlindungan sosial bersyarat.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kolom Kanan: Form Pengajuan -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-file-earmark-arrow-up-fill text-primary me-2"></i>Formulir Bukti & Pengajuan Perubahan
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+
+                    <div class="alert alert-primary d-flex align-items-center mb-4">
+                        <i class="bi bi-shield-check fs-3 me-3 text-primary"></i>
+                        <div class="small">
+                            <strong>Transparansi Verifikasi:</strong> Lampirkan foto kondisi nyata tampak depan rumah dan data penghasilan yang jujur. Data Anda akan disurvei dan diverifikasi oleh petugas kelurahan secara langsung.
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Desil yang Diajukan -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">
+                                {{ form.desil_diajukan.label.text }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.desil_diajukan(class_="form-select" + (" is-invalid" if form.desil_diajukan.errors else "")) }}
+                            {% for err in form.desil_diajukan.errors %}
+                                <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Pilih desil yang sesuai dengan kondisi ekonomi keluarga riil.</div>
+                        </div>
+
+                        <!-- Penghasilan Terkini -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">
+                                {{ form.penghasilan_terkini.label.text }} <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                {{ form.penghasilan_terkini(class_="form-control" + (" is-invalid" if form.penghasilan_terkini.errors else ""), placeholder="Contoh: 850000") }}
+                            </div>
+                            {% for err in form.penghasilan_terkini.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Penghasilan rata-rata yang sebenarnya diperoleh per bulan.</div>
+                        </div>
+
+                        <!-- Tanggungan Terkini -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">
+                                {{ form.jumlah_tanggungan.label.text }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.jumlah_tanggungan(class_="form-control" + (" is-invalid" if form.jumlah_tanggungan.errors else ""), placeholder="0") }}
+                                <span class="input-group-text">Orang</span>
+                            </div>
+                            {% for err in form.jumlah_tanggungan.errors %}
+                                <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Jumlah anggota keluarga yang ditanggung (anak/lansia/tidak bekerja).</div>
+                        </div>
+
+                        <!-- Foto Rumah Baru (Wajib) -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">
+                                {{ form.foto_rumah.label.text }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.foto_rumah(class_="form-control" + (" is-invalid" if form.foto_rumah.errors else ""), accept="image/*", id="inputFotoRumah") }}
+                            {% for err in form.foto_rumah.errors %}
+                                <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Format gambar: JPG, PNG, atau WEBP (Maksimal 5MB).</div>
+                        </div>
+
+                        <!-- Preview Foto yang Dipilih -->
+                        <div class="col-12" id="previewContainer" style="display: none;">
+                            <div class="card p-2 bg-light border">
+                                <div class="small fw-semibold mb-1 text-muted"><i class="bi bi-eye me-1"></i>Preview Foto Rumah yang Akan Diunggah:</div>
+                                <div class="text-center">
+                                    <img id="imagePreview" src="#" alt="Preview Foto Rumah" class="img-fluid rounded border" style="max-height: 200px; object-fit: contain;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dokumen Pendukung (Opsional) -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-dark">
+                                {{ form.dokumen_pendukung.label.text }}
+                            </label>
+                            {{ form.dokumen_pendukung(class_="form-control" + (" is-invalid" if form.dokumen_pendukung.errors else ""), accept="image/*,.pdf") }}
+                            {% for err in form.dokumen_pendukung.errors %}
+                                <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Opsional: Surat Keterangan Tidak Mampu (SKTM), slip gaji buruh, atau foto kondisi dalam rumah.</div>
+                        </div>
+
+                        <!-- Alasan Pengajuan -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-dark">
+                                {{ form.alasan_pengajuan.label.text }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.alasan_pengajuan(class_="form-control" + (" is-invalid" if form.alasan_pengajuan.errors else ""), rows="4", placeholder="Jelaskan secara rinci mengapa desil saat ini (misal Desil 7/10) tidak sesuai. Contoh: 'Keluarga kami sebenarnya berpenghasilan serabutan Rp 800.000/bulan dengan 3 anak sekolah, kondisi rumah bilik kayu semi permanen, namun tercatat desil 7 sehingga bantuan PKH tertolak. Mohon penyesuaian ke Desil 1 atau 2.'") }}
+                            {% for err in form.alasan_pengajuan.errors %}
+                                <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                            <div class="form-text small">Jelaskan kondisi ekonomi riil dan alasan agar petugas dapat memvalidasi dengan tepat.</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        {% if current_user.is_warga %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Batal</a>
+                        {% else %}
+                        <a href="{{ url_for('desil.daftar_pengajuan') }}" class="btn btn-outline-secondary">Batal</a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                            <i class="bi bi-send me-1"></i> Kirim Permohonan Perubahan Desil
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Live preview untuk input foto rumah
+    const inputFoto = document.getElementById('inputFotoRumah');
+    const previewContainer = document.getElementById('previewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+
+    if (inputFoto) {
+        inputFoto.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.src = event.target.result;
+                    previewContainer.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

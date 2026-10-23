@@ -1,0 +1,56 @@
+{# Jinja2 Reusable Macros for Sociovault #}
+
+{# 1. Macro: Status Badge #}
+{% macro status_badge(status) %}
+    {% if status == 'layak' %}
+        <span class="badge status-badge-layak px-2 py-1">
+            <i class="bi bi-check-circle me-1"></i> Layak
+        </span>
+    {% elif status == 'tidak_layak' %}
+        <span class="badge status-badge-tidak-layak px-2 py-1">
+            <i class="bi bi-x-circle me-1"></i> Tidak Layak
+        </span>
+    {% elif status == 'perlu_ditinjau' %}
+        <span class="badge status-badge-perlu-tinjau px-2 py-1">
+            <i class="bi bi-exclamation-triangle me-1"></i> Perlu Ditinjau
+        </span>
+    {% elif status %}
+        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">
+            {{ status|capitalize }}
+        </span>
+    {% else %}
+        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">
+            <i class="bi bi-clock me-1"></i> Menunggu Konfirmasi
+        </span>
+    {% endif %}
+{% endmacro %}
+
+
+{# 2. Macro: Render Form Field WTForms dengan Error Inline is-invalid #}
+{% macro render_field(field, class_='form-control', help_text='') %}
+    <div class="mb-3">
+        {% if field.type != 'HiddenField' and field.type != 'CSRFTokenField' and field.type != 'SubmitField' %}
+            <label for="{{ field.id }}" class="form-label fw-semibold">
+                {{ field.label.text }}
+                {% if field.flags.required %}
+                    <span class="text-danger">*</span>
+                {% endif %}
+            </label>
+        {% endif %}
+
+        {% if field.errors %}
+            {{ field(class=class_ + ' is-invalid', **kwargs) }}
+            <div class="invalid-feedback d-block">
+                {% for error in field.errors %}
+                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% else %}
+            {{ field(class=class_, **kwargs) }}
+        {% endif %}
+
+        {% if help_text and not field.errors %}
+            <div class="form-text">{{ help_text }}</div>
+        {% endif %}
+    </div>
+{% endmacro %}
