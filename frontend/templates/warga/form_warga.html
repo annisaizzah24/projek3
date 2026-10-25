@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import render_field %}
 
-{% block title %}{{ 'Edit Warga' if is_edit else 'Tambah Warga Baru' }} - Sociovault{% endblock %}
+{% block title %}{{ 'Edit Warga' if is_edit else 'Tambah Warga Baru' }} - SocioVault{% endblock %}
 
 {% block content %}
 <style>
@@ -18,19 +18,19 @@
     <div class="col-lg-9">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <div>
-                <h3 class="fw-bold mb-1">
-                    <i class="bi {{ 'bi-pencil-square' if is_edit else 'bi-person-plus-fill' }} text-primary me-2"></i>
-                    {{ 'Edit Data Warga' if is_edit else 'Pendaftaran Warga Baru' }}
+                <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                    <i class="bi {{ 'bi-pencil-square' if is_edit else 'bi-person-plus-fill' }} text-primary"></i>
+                    <span>{{ 'Edit Data Warga' if is_edit else 'Pendaftaran Warga Baru' }}</span>
                 </h3>
-                <p class="text-muted mb-0">Pastikan seluruh data tervalidasi dengan benar termasuk foto fisik rumah dan kategori desil.</p>
+                <p class="text-muted mb-0 small">Pastikan seluruh data tervalidasi dengan benar termasuk foto fisik rumah dan klasifikasi desil.</p>
             </div>
             <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Kembali
             </a>
         </div>
 
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body p-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
                 <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
 

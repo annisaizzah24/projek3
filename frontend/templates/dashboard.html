@@ -1,149 +1,203 @@
 {% extends "base.html" %}
+{% from "macros.html" import status_badge %}
 
-{% block title %}Dashboard - Sociovault{% endblock %}
+{% block title %}Dashboard Ikhtisar - SocioVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard Ikhtisar Verifikasi Bansos</h3>
-        <p class="text-muted mb-0">Ringkasan status evaluasi kelayakan, program bantuan sosial, dan permohonan perubahan desil</p>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-grid-1x2-fill text-primary"></i>
+            <span>Dashboard Ikhtisar Verifikasi Bansos</span>
+        </h3>
+        <p class="text-muted mb-0 small">
+            Ringkasan evaluasi Rule Engine, status kelayakan penerima, dan monitoring perubahan desil
+        </p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex align-items-center gap-2">
         <a href="{{ url_for('verifikasi.mulai_verifikasi') }}" class="btn btn-primary">
-            <i class="bi bi-cpu me-1"></i> Mulai Verifikasi Baru
+            <i class="bi bi-cpu-fill"></i>
+            <span>Mulai Verifikasi Baru</span>
         </a>
     </div>
 </div>
 
+<!-- Pending Sanggah Alert Banner (if any) -->
 {% if pengajuan_desil_menunggu and pengajuan_desil_menunggu > 0 %}
-<div class="alert alert-warning border-warning d-flex align-items-center justify-content-between p-3 rounded-3 shadow-sm mb-4 flex-wrap gap-2">
-    <div class="d-flex align-items-center">
-        <i class="bi bi-bell-fill fs-3 me-3 text-warning"></i>
+<div class="alert alert-warning border-warning border-opacity-50 d-flex align-items-center justify-content-between p-3.5 rounded-3 shadow-sm mb-4 flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon warning m-0" style="width: 44px; height: 44px; font-size: 1.25rem;">
+            <i class="bi bi-bell-fill"></i>
+        </div>
         <div>
-            <div class="fw-bold text-dark">Terdapat {{ pengajuan_desil_menunggu }} Permohonan Perubahan Desil Menunggu Verifikasi!</div>
-            <div class="small text-muted">Warga mengajukan sanggahan perbaikan desil dengan melampirkan foto fisik rumah dan bukti penghasilan terkini.</div>
+            <div class="fw-bold text-dark mb-0.5">
+                Terdapat <span class="badge bg-warning text-dark px-2">{{ pengajuan_desil_menunggu }} Permohonan Perubahan Desil</span> Menunggu Verifikasi
+            </div>
+            <div class="text-muted small">
+                Warga telah mengunggah bukti foto fisik rumah tinggal dan slip penghasilan riil untuk sanggahan desil.
+            </div>
         </div>
     </div>
-    <a href="{{ url_for('desil.daftar_pengajuan', status='menunggu') }}" class="btn btn-warning btn-sm fw-bold text-dark">
+    <a href="{{ url_for('desil.daftar_pengajuan', status='menunggu') }}" class="btn btn-warning btn-sm fw-bold text-dark px-3">
         <i class="bi bi-arrow-right-circle me-1"></i> Tinjau Pengajuan Warga
     </a>
 </div>
 {% endif %}
 
-<!-- Metric Cards Row -->
+<!-- 4 Key Metric Cards -->
 <div class="row g-3 mb-4">
+    <!-- Total Warga -->
     <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body d-flex align-items-center">
-                <div class="bg-primary-subtle text-primary p-3 rounded-3 me-3">
-                    <i class="bi bi-people-fill fs-3"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">Total Warga Terdata</div>
-                    <div class="fs-4 fw-bold text-dark">{{ total_warga }}</div>
+        <div class="stat-card card-lift">
+            <div class="stat-icon primary">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+                <div class="stat-label">Total Warga Terdata</div>
+                <div class="stat-value">{{ total_warga }}</div>
+                <div class="small text-muted mt-0.5" style="font-size: 0.75rem;">
+                    <i class="bi bi-database-check text-primary me-1"></i>Data Kependudukan
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Kartu Keluarga (KK) -->
     <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body d-flex align-items-center">
-                <div class="bg-info-subtle text-info p-3 rounded-3 me-3">
-                    <i class="bi bi-folder-fill fs-3"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">Kartu Keluarga (KK)</div>
-                    <div class="fs-4 fw-bold text-dark">{{ total_keluarga }}</div>
+        <div class="stat-card card-lift">
+            <div class="stat-icon info">
+                <i class="bi bi-folder-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+                <div class="stat-label">Kartu Keluarga (KK)</div>
+                <div class="stat-value">{{ total_keluarga }}</div>
+                <div class="small text-muted mt-0.5" style="font-size: 0.75rem;">
+                    <i class="bi bi-house-door text-info me-1"></i>Unit Rumah Tangga
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Program Bansos Aktif -->
     <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body d-flex align-items-center">
-                <div class="bg-warning-subtle text-warning-emphasis p-3 rounded-3 me-3">
-                    <i class="bi bi-gift-fill fs-3"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">Program Bansos Aktif</div>
-                    <div class="fs-4 fw-bold text-dark">{{ total_program }}</div>
+        <div class="stat-card card-lift">
+            <div class="stat-icon warning">
+                <i class="bi bi-gift-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+                <div class="stat-label">Program Bansos Aktif</div>
+                <div class="stat-value">{{ total_program }}</div>
+                <div class="small text-muted mt-0.5" style="font-size: 0.75rem;">
+                    <i class="bi bi-check-circle text-warning me-1"></i>Kriteria Rule Engine
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Total Sesi Verifikasi -->
     <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body d-flex align-items-center">
-                <div class="bg-secondary-subtle text-secondary p-3 rounded-3 me-3">
-                    <i class="bi bi-journal-check fs-3"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">Total Sesi Verifikasi</div>
-                    <div class="fs-4 fw-bold text-dark">{{ total_verifikasi }}</div>
+        <div class="stat-card card-lift">
+            <div class="stat-icon secondary">
+                <i class="bi bi-journal-check"></i>
+            </div>
+            <div class="overflow-hidden">
+                <div class="stat-label">Total Sesi Verifikasi</div>
+                <div class="stat-value">{{ total_verifikasi }}</div>
+                <div class="small text-muted mt-0.5" style="font-size: 0.75rem;">
+                    <i class="bi bi-clock-history text-secondary me-1"></i>Audit & Evaluasi
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Status Breakdown & Chart Row -->
+<!-- Status Breakdown & Distribution Chart -->
 <div class="row g-4 mb-4">
     <!-- Chart Column -->
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-header bg-white py-3 border-bottom">
-                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Distribusi Status Verifikasi</h6>
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-pie-chart-fill text-primary"></i>
+                    <span>Distribusi Hasil Verifikasi</span>
+                </h6>
+                <span class="badge bg-light text-muted border font-monospace">Rule Engine</span>
             </div>
-            <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
-                <div style="position: relative; height: 220px; width: 100%;">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
+                <div class="chart-container" style="position: relative; height: 230px; width: 100%;">
                     <canvas id="statusChart"></canvas>
+                </div>
+                <div class="text-center mt-3 text-muted small">
+                    Rasio kelayakan berbasis aturan objektif bansos
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Status Cards Column -->
+    <!-- Status Breakdown Grid -->
     <div class="col-lg-7">
         <div class="row g-3">
+            <!-- Layak -->
             <div class="col-sm-6">
-                <div class="card border-0 shadow-sm rounded-3 border-start border-4 border-success h-100">
-                    <div class="card-body">
-                        <div class="text-muted small fw-semibold">Hasil Layak</div>
+                <div class="card border-0 shadow-sm h-100 border-start border-4 border-success card-lift">
+                    <div class="card-body p-3.5">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small fw-semibold">Hasil Layak</span>
+                            <div class="stat-icon success" style="width: 36px; height: 36px; font-size: 1.1rem; margin: 0;">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                        </div>
                         <div class="fs-3 fw-bold text-success">{{ verif_layak }}</div>
-                        <div class="small text-muted">Memenuhi seluruh kriteria program</div>
+                        <div class="small text-muted mt-1">Memenuhi seluruh kriteria program</div>
                     </div>
                 </div>
             </div>
 
+            <!-- Tidak Layak -->
             <div class="col-sm-6">
-                <div class="card border-0 shadow-sm rounded-3 border-start border-4 border-danger h-100">
-                    <div class="card-body">
-                        <div class="text-muted small fw-semibold">Hasil Tidak Layak</div>
+                <div class="card border-0 shadow-sm h-100 border-start border-4 border-danger card-lift">
+                    <div class="card-body p-3.5">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small fw-semibold">Hasil Tidak Layak</span>
+                            <div class="stat-icon danger" style="width: 36px; height: 36px; font-size: 1.1rem; margin: 0;">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </div>
+                        </div>
                         <div class="fs-3 fw-bold text-danger">{{ verif_tidak_layak }}</div>
-                        <div class="small text-muted">Melebihi batas kriteria program</div>
+                        <div class="small text-muted mt-1">Melebihi batas ambang kriteria</div>
                     </div>
                 </div>
             </div>
 
+            <!-- Perlu Ditinjau -->
             <div class="col-sm-6">
-                <div class="card border-0 shadow-sm rounded-3 border-start border-4 border-warning h-100">
-                    <div class="card-body">
-                        <div class="text-muted small fw-semibold">Perlu Ditinjau</div>
-                        <div class="fs-3 fw-bold text-warning-emphasis">{{ verif_perlu_tinjau }}</div>
-                        <div class="small text-muted">Anomali / data profil belum lengkap</div>
+                <div class="card border-0 shadow-sm h-100 border-start border-4 border-warning card-lift">
+                    <div class="card-body p-3.5">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small fw-semibold">Perlu Ditinjau</span>
+                            <div class="stat-icon warning" style="width: 36px; height: 36px; font-size: 1.1rem; margin: 0;">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                        </div>
+                        <div class="fs-3 fw-bold text-warning">{{ verif_perlu_tinjau }}</div>
+                        <div class="small text-muted mt-1">Anomali profil / data belum lengkap</div>
                     </div>
                 </div>
             </div>
 
+            <!-- Menunggu Konfirmasi -->
             <div class="col-sm-6">
-                <div class="card border-0 shadow-sm rounded-3 border-start border-4 border-secondary h-100">
-                    <div class="card-body">
-                        <div class="text-muted small fw-semibold">Menunggu Konfirmasi</div>
+                <div class="card border-0 shadow-sm h-100 border-start border-4 border-secondary card-lift">
+                    <div class="card-body p-3.5">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small fw-semibold">Menunggu Penetapan</span>
+                            <div class="stat-icon secondary" style="width: 36px; height: 36px; font-size: 1.1rem; margin: 0;">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                        </div>
                         <div class="fs-3 fw-bold text-secondary">{{ verif_pending }}</div>
-                        <div class="small text-muted">Belum disahkan oleh petugas</div>
+                        <div class="small text-muted mt-1">Belum disahkan secara final oleh petugas</div>
                     </div>
                 </div>
             </div>
@@ -152,67 +206,84 @@
 </div>
 
 <!-- Recent Verifications Table -->
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="card-title fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Riwayat Verifikasi Terbaru</h5>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3.5 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-primary"></i>
+            <span>Riwayat Verifikasi Terbaru</span>
+        </h5>
         <a href="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="btn btn-outline-primary btn-sm">
-            Lihat Semua Riwayat <i class="bi bi-arrow-right ms-1"></i>
+            <span>Lihat Semua Riwayat</span>
+            <i class="bi bi-arrow-right ms-1"></i>
         </a>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th class="ps-3">ID</th>
-                        <th>Warga (NIK & Nama)</th>
+                        <th class="ps-4">ID</th>
+                        <th>Warga (Nama & NIK)</th>
                         <th>Program Bantuan</th>
-                        <th>Status Sistem (Rule Engine)</th>
-                        <th>Status Final</th>
+                        <th>Hasil Rule Engine</th>
+                        <th>Status Final Petugas</th>
                         <th>Waktu Verifikasi</th>
-                        <th class="text-end pe-3">Aksi</th>
+                        <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for v in recent_verifikasi %}
                     <tr>
-                        <td class="ps-3 fw-bold text-muted">#{{ v.id }}</td>
+                        <td class="ps-4 fw-bold text-muted font-monospace">#{{ v.id }}</td>
                         <td>
-                            <div class="fw-bold">{{ v.warga.nama }}</div>
-                            <div class="small font-monospace text-primary">{{ v.warga.nik }}</div>
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="user-avatar-circle" style="width: 34px; height: 34px; font-size: 0.85rem; background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);">
+                                    {{ v.warga.nama[:1]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ v.warga.nama }}</div>
+                                    <div class="font-monospace small text-primary" style="font-size: 0.78rem;">{{ v.warga.nik }}</div>
+                                </div>
+                            </div>
                         </td>
-                        <td><span class="badge bg-light text-dark border">{{ v.program.nama_program }}</span></td>
                         <td>
-                            {% if v.status_otomatis == 'layak' %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Layak</span>
-                            {% elif v.status_otomatis == 'tidak_layak' %}
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Tidak Layak</span>
+                            <span class="badge bg-light text-dark border px-2.5 py-1">
+                                <i class="bi bi-gift text-primary me-1"></i>{{ v.program.nama_program }}
+                            </span>
+                        </td>
+                        <td>
+                            {{ status_badge(v.status_otomatis) }}
+                        </td>
+                        <td>
+                            {% if v.status_final %}
+                                {{ status_badge(v.status_final) }}
                             {% else %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">Perlu Ditinjau</span>
+                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-clock me-1"></i> Belum Dikonfirmasi
+                                </span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if v.status_final == 'layak' %}
-                                <span class="badge bg-success">Layak</span>
-                            {% elif v.status_final == 'tidak_layak' %}
-                                <span class="badge bg-danger">Tidak Layak</span>
-                            {% elif v.status_final == 'perlu_ditinjau' %}
-                                <span class="badge bg-warning text-dark">Perlu Ditinjau</span>
-                            {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary border">Pending</span>
-                            {% endif %}
+                            <div class="small text-muted">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                {{ v.tanggal_verifikasi.strftime('%d-%m-%Y %H:%M') if v.tanggal_verifikasi else '-' }}
+                            </div>
                         </td>
-                        <td><small class="text-muted">{{ v.tanggal_verifikasi.strftime('%d-%m-%Y %H:%M') if v.tanggal_verifikasi else '-' }}</small></td>
-                        <td class="text-end pe-3">
+                        <td class="text-end pe-4">
                             <a href="{{ url_for('verifikasi.detail_verifikasi', id=v.id) }}" class="btn btn-sm btn-outline-primary">
-                                Detail <i class="bi bi-chevron-right ms-1"></i>
+                                <span>Detail</span>
+                                <i class="bi bi-chevron-right ms-0.5"></i>
                             </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
-                            Belum ada riwayat verifikasi bansos.
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                            <div>Belum ada data riwayat verifikasi bansos.</div>
+                            <a href="{{ url_for('verifikasi.mulai_verifikasi') }}" class="btn btn-primary btn-sm mt-2">
+                                <i class="bi bi-cpu me-1"></i> Mulai Verifikasi Pertama
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -243,11 +314,12 @@
                     backgroundColor: [
                         '#10b981', // green
                         '#ef4444', // red
-                        '#f59e0b', // yellow/amber
-                        '#94a3b8'  // gray
+                        '#f59e0b', // amber
+                        '#94a3b8'  // slate gray
                     ],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
+                    borderWidth: 3,
+                    borderColor: '#ffffff',
+                    hoverOffset: 6
                 }]
             },
             options: {
@@ -258,11 +330,26 @@
                         position: 'bottom',
                         labels: {
                             boxWidth: 12,
-                            font: { size: 11, weight: '500' }
+                            boxHeight: 12,
+                            borderRadius: 3,
+                            usePointStyle: true,
+                            font: { 
+                                family: "'Plus Jakarta Sans', sans-serif",
+                                size: 12,
+                                weight: '600'
+                            },
+                            padding: 16
                         }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13, weight: 'bold' },
+                        bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+                        padding: 10,
+                        cornerRadius: 8
                     }
                 },
-                cutout: '65%'
+                cutout: '70%'
             }
         });
     });

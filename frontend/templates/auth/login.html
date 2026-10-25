@@ -1,48 +1,139 @@
 {% extends "base.html" %}
 {% from "macros.html" import render_field %}
 
-{% block title %}Login - Sociovault{% endblock %}
+{% block title %}Login Sistem - SocioVault{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center pt-4">
-    <div class="col-md-5 col-lg-4">
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body p-4">
+<div class="row justify-content-center pt-3 pb-5">
+    <div class="col-md-6 col-lg-5 col-xl-4">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Header Glow Accent -->
+            <div style="height: 6px; background: linear-gradient(90deg, #2563eb, #3b82f6, #06b6d4);"></div>
+            
+            <div class="card-body p-4 p-md-5">
                 <div class="text-center mb-4">
-                    <div class="avatar bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                        <i class="bi bi-shield-lock fs-2"></i>
+                    <div class="brand-icon mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.75rem; border-radius: 14px;">
+                        <i class="bi bi-shield-lock-fill"></i>
                     </div>
-                    <h4 class="card-title fw-bold">Login Sistem</h4>
-                    <p class="text-muted small">Masuk untuk mengakses data & layanan bansos</p>
+                    <h4 class="card-title fw-bold text-dark mb-1">Masuk ke Sistem</h4>
+                    <p class="text-muted small">Akses portal verifikasi & layanan bantuan sosial</p>
                 </div>
 
                 <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
                     {{ form.hidden_tag() }}
 
-                    {{ render_field(form.username, placeholder="Masukkan username", autofocus=True) }}
-                    {{ render_field(form.password, placeholder="Masukkan password") }}
+                    <div class="mb-3">
+                        <label for="{{ form.username.id }}" class="form-label">
+                            <i class="bi bi-person me-1 text-primary"></i>Username
+                        </label>
+                        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), id="usernameField", placeholder="Masukkan username", autofocus=True) }}
+                        {% for error in form.username.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mt-2">
-                        <i class="bi bi-box-arrow-in-right me-1"></i> Masuk ke Sistem
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="{{ form.password.id }}" class="form-label mb-0">
+                                <i class="bi bi-lock me-1 text-primary"></i>Password
+                            </label>
+                            <button type="button" class="btn btn-link p-0 text-decoration-none small text-muted" id="btnTogglePassword" style="font-size: 0.78rem;">
+                                <i class="bi bi-eye me-1" id="iconEye"></i>Lihat
+                            </button>
+                        </div>
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), id="passwordField", placeholder="Masukkan password") }}
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2.5 fw-semibold mt-3 shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Masuk ke Akun
                     </button>
                 </form>
 
-                <div class="mt-3 text-center">
+                <div class="mt-4 text-center">
                     <p class="text-muted small mb-0">
-                        Belum punya akun warga? 
-                        <a href="{{ url_for('auth.register') }}" class="fw-semibold text-primary text-decoration-none">
+                        Belum memiliki akun warga? 
+                        <a href="{{ url_for('auth.register') }}" class="fw-bold text-primary text-decoration-none">
                             Registrasi Akun Warga <i class="bi bi-arrow-right"></i>
                         </a>
                     </p>
                 </div>
 
-                <div class="mt-4 pt-3 border-top text-center text-muted small">
-                    <p class="mb-1"><strong>Akun Demo Bawaan:</strong></p>
-                    <p class="mb-0">Admin: <code>admin</code> / <code>admin123</code></p>
-                    <p class="mb-0">Petugas: <code>petugas1</code> / <code>petugas123</code></p>
+                <!-- Interactive Demo Account Chips (UX Delight) -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="text-muted small fw-semibold text-center mb-2" style="font-size: 0.75rem;">
+                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i>KLIK UNTUK OTOMATIS MENGISI AKUN DEMO:
+                    </div>
+                    <div class="d-flex flex-wrap gap-1.5 justify-content-center">
+                        <button type="button" class="demo-pill btn-demo-fill" data-user="admin" data-pass="admin123" title="Klik untuk isi form">
+                            <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem;">Admin</span>
+                            <code>admin</code>
+                        </button>
+                        <button type="button" class="demo-pill btn-demo-fill" data-user="petugas1" data-pass="petugas123" title="Klik untuk isi form">
+                            <span class="badge bg-primary rounded-pill" style="font-size: 0.65rem;">Petugas</span>
+                            <code>petugas1</code>
+                        </button>
+                        <button type="button" class="demo-pill btn-demo-fill" data-user="warga_ratna" data-pass="warga123" title="Klik untuk isi form">
+                            <span class="badge bg-info text-dark rounded-pill" style="font-size: 0.65rem;">Warga (Miskin)</span>
+                            <code>warga_ratna</code>
+                        </button>
+                        <button type="button" class="demo-pill btn-demo-fill" data-user="warga_bambang" data-pass="warga123" title="Klik untuk isi form">
+                            <span class="badge bg-secondary rounded-pill" style="font-size: 0.65rem;">Warga (Mampu)</span>
+                            <code>warga_bambang</code>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Password Toggle Visibility
+        const btnTogglePassword = document.getElementById("btnTogglePassword");
+        const passwordField = document.getElementById("passwordField");
+        const iconEye = document.getElementById("iconEye");
+
+        if (btnTogglePassword && passwordField) {
+            btnTogglePassword.addEventListener("click", function() {
+                if (passwordField.type === "password") {
+                    passwordField.type = "text";
+                    iconEye.classList.replace("bi-eye", "bi-eye-slash");
+                    btnTogglePassword.innerHTML = '<i class="bi bi-eye-slash me-1"></i>Sembunyi';
+                } else {
+                    passwordField.type = "password";
+                    iconEye.classList.replace("bi-eye-slash", "bi-eye");
+                    btnTogglePassword.innerHTML = '<i class="bi bi-eye me-1"></i>Lihat';
+                }
+            });
+        }
+
+        // 2. Demo Account Auto-Fill
+        const demoButtons = document.querySelectorAll(".btn-demo-fill");
+        const usernameField = document.getElementById("usernameField");
+
+        demoButtons.forEach(btn => {
+            btn.addEventListener("click", function() {
+                const u = this.getAttribute("data-user");
+                const p = this.getAttribute("data-pass");
+                if (usernameField && passwordField) {
+                    usernameField.value = u;
+                    passwordField.value = p;
+                    // Visual feedback pulse
+                    usernameField.classList.add("bg-primary-subtle");
+                    passwordField.classList.add("bg-primary-subtle");
+                    setTimeout(() => {
+                        usernameField.classList.remove("bg-primary-subtle");
+                        passwordField.classList.remove("bg-primary-subtle");
+                    }, 400);
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

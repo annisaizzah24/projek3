@@ -1,26 +1,26 @@
 {# Jinja2 Reusable Macros for Sociovault #}
 
-{# 1. Macro: Status Badge #}
+{# 1. Macro: Status Badge Kelayakan Bansos #}
 {% macro status_badge(status) %}
     {% if status == 'layak' %}
-        <span class="badge status-badge-layak px-2 py-1">
-            <i class="bi bi-check-circle me-1"></i> Layak
+        <span class="badge status-badge-layak rounded-pill px-2.5 py-1">
+            <i class="bi bi-check-circle-fill me-1"></i> Layak
         </span>
     {% elif status == 'tidak_layak' %}
-        <span class="badge status-badge-tidak-layak px-2 py-1">
-            <i class="bi bi-x-circle me-1"></i> Tidak Layak
+        <span class="badge status-badge-tidak-layak rounded-pill px-2.5 py-1">
+            <i class="bi bi-x-circle-fill me-1"></i> Tidak Layak
         </span>
     {% elif status == 'perlu_ditinjau' %}
-        <span class="badge status-badge-perlu-tinjau px-2 py-1">
-            <i class="bi bi-exclamation-triangle me-1"></i> Perlu Ditinjau
+        <span class="badge status-badge-perlu-tinjau rounded-pill px-2.5 py-1">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Perlu Ditinjau
         </span>
     {% elif status %}
-        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">
+        <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-1">
             {{ status|capitalize }}
         </span>
     {% else %}
-        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">
-            <i class="bi bi-clock me-1"></i> Menunggu Konfirmasi
+        <span class="badge status-badge-pending rounded-pill px-2.5 py-1">
+            <i class="bi bi-clock-history me-1"></i> Menunggu Konfirmasi
         </span>
     {% endif %}
 {% endmacro %}
@@ -30,19 +30,22 @@
 {% macro render_field(field, class_='form-control', help_text='') %}
     <div class="mb-3">
         {% if field.type != 'HiddenField' and field.type != 'CSRFTokenField' and field.type != 'SubmitField' %}
-            <label for="{{ field.id }}" class="form-label fw-semibold">
+            <label for="{{ field.id }}" class="form-label">
                 {{ field.label.text }}
                 {% if field.flags.required %}
-                    <span class="text-danger">*</span>
+                    <span class="text-danger fw-bold ms-0.5">*</span>
                 {% endif %}
             </label>
         {% endif %}
 
         {% if field.errors %}
             {{ field(class=class_ + ' is-invalid', **kwargs) }}
-            <div class="invalid-feedback d-block">
+            <div class="invalid-feedback d-block mt-1">
                 {% for error in field.errors %}
-                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>{{ error }}</span>
+                    </div>
                 {% endfor %}
             </div>
         {% else %}
@@ -50,7 +53,9 @@
         {% endif %}
 
         {% if help_text and not field.errors %}
-            <div class="form-text">{{ help_text }}</div>
+            <div class="form-text mt-1 text-muted">
+                <i class="bi bi-info-circle me-1"></i>{{ help_text }}
+            </div>
         {% endif %}
     </div>
 {% endmacro %}

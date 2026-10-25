@@ -1,19 +1,35 @@
 {% extends "base.html" %}
 {% from "macros.html" import render_field %}
 
-{% block title %}Registrasi Warga Baru - Sociovault{% endblock %}
+{% block title %}Registrasi Akun Warga - SocioVault{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center pt-3 pb-5">
-    <div class="col-md-7 col-lg-5">
-        <div class="card border-0 shadow-sm rounded-3">
+    <div class="col-md-8 col-lg-6 col-xl-5">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Header Glow Accent -->
+            <div style="height: 6px; background: linear-gradient(90deg, #2563eb, #3b82f6, #10b981);"></div>
+
             <div class="card-body p-4 p-md-5">
                 <div class="text-center mb-4">
-                    <div class="avatar bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
-                        <i class="bi bi-person-badge fs-2"></i>
+                    <div class="brand-icon mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.75rem; border-radius: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <i class="bi bi-person-plus-fill"></i>
                     </div>
-                    <h4 class="card-title fw-bold mb-1">Registrasi Akun Warga</h4>
-                    <p class="text-muted small mb-0">Daftarkan akun untuk memantau status kelayakan bantuan sosial secara mandiri</p>
+                    <h4 class="card-title fw-bold text-dark mb-1">Registrasi Akun Warga</h4>
+                    <p class="text-muted small">Daftarkan akun untuk transparansi kelayakan bansos & sanggah desil mandiri</p>
+                </div>
+
+                <!-- Info Benefits Pill -->
+                <div class="p-3 bg-light rounded-3 border mb-4">
+                    <div class="d-flex align-items-center gap-2 small text-dark fw-semibold mb-1">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <span>Manfaat Akun Warga Mandiri:</span>
+                    </div>
+                    <ul class="mb-0 ps-3 small text-muted" style="font-size: 0.8rem;">
+                        <li>Cek status desil kesejahteraan keluarga secara transparan.</li>
+                        <li>Ajukan sanggah perubahan desil bila data tidak sesuai kondisi riil.</li>
+                        <li>Pantau status kelayakan permohonan program bansos pemerintah.</li>
+                    </ul>
                 </div>
 
                 <form method="POST" action="{{ url_for('auth.register') }}">
@@ -21,7 +37,7 @@
 
                     {{ render_field(form.nama, placeholder="Nama lengkap sesuai KTP", autofocus=True) }}
 
-                    {{ render_field(form.nik, placeholder="16 digit NIK KTP (opsional)", maxlength="16", help_text="Jika diisi, sistem otomatis menghubungkan riwayat verifikasi bansos Anda.") }}
+                    {{ render_field(form.nik, placeholder="16 digit NIK KTP (opsional)", maxlength="16", help_text="Jika diisi, sistem otomatis menghubungkan profil data warga & foto rumah Anda.") }}
 
                     {{ render_field(form.username, placeholder="Pilih username unik (tanpa spasi)") }}
 
@@ -34,15 +50,15 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mt-3">
+                    <button type="submit" class="btn btn-primary w-100 py-2.5 fw-semibold mt-3 shadow-sm">
                         <i class="bi bi-person-check-fill me-1"></i> Selesaikan Pendaftaran
                     </button>
                 </form>
 
                 <div class="mt-4 pt-3 border-top text-center text-muted small">
                     Sudah memiliki akun terdaftar? 
-                    <a href="{{ url_for('auth.login') }}" class="fw-semibold text-primary text-decoration-none">
-                        Masuk ke Sistem <i class="bi bi-arrow-right"></i>
+                    <a href="{{ url_for('auth.login') }}" class="fw-bold text-primary text-decoration-none">
+                        Masuk ke Akun <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>

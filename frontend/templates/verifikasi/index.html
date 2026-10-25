@@ -1,23 +1,30 @@
 {% extends "base.html" %}
+{% from "macros.html" import status_badge %}
 
-{% block title %}Riwayat & Laporan Verifikasi - Sociovault{% endblock %}
+{% block title %}Riwayat & Laporan Verifikasi - SocioVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-journal-text text-primary me-2"></i>Riwayat & Laporan Verifikasi</h3>
-        <p class="text-muted mb-0">Audit riwayat evaluasi Rule Engine dan rekam jejak penetapan konfirmasi petugas</p>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-journal-check text-primary"></i>
+            <span>Riwayat & Laporan Verifikasi</span>
+        </h3>
+        <p class="text-muted mb-0 small">
+            Audit riwayat evaluasi Rule Engine dan rekam jejak penetapan konfirmasi kelayakan oleh petugas
+        </p>
     </div>
     <a href="{{ url_for('verifikasi.mulai_verifikasi') }}" class="btn btn-primary">
-        <i class="bi bi-cpu me-1"></i> + Mulai Verifikasi Baru
+        <i class="bi bi-cpu-fill me-1"></i> + Mulai Verifikasi Baru
     </a>
 </div>
 
 <!-- Filter Bar with Date Range -->
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
+    <div class="card-body p-3.5">
         <form method="GET" action="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label small fw-semibold">Status Kelayakan</label>
                 <select name="status" class="form-select">
                     <option value="">-- Semua Status --</option>
@@ -28,7 +35,7 @@
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label small fw-semibold">Program Bantuan</label>
                 <select name="program_id" class="form-select">
                     <option value="">-- Semua Program --</option>
@@ -38,94 +45,102 @@
                 </select>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-lg-2 col-md-4">
                 <label class="form-label small fw-semibold">Tanggal Mulai</label>
                 <input type="date" name="tanggal_mulai" class="form-control" value="{{ tanggal_mulai or '' }}">
             </div>
 
-            <div class="col-md-2">
+            <div class="col-lg-2 col-md-4">
                 <label class="form-label small fw-semibold">Tanggal Selesai</label>
                 <input type="date" name="tanggal_selesai" class="form-control" value="{{ tanggal_selesai or '' }}">
             </div>
 
-            <div class="col-md-2 d-flex align-items-end gap-2">
+            <div class="col-lg-2 col-md-4 d-flex align-items-end gap-2">
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel me-1"></i> Filter
+                    <i class="bi bi-funnel"></i> Filter
                 </button>
-                <a href="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="btn btn-outline-secondary">Reset</a>
+                <a href="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="btn btn-outline-secondary" title="Reset Filter">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Verification Table -->
+<!-- Verification Table Card -->
 <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3.5 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-card-checklist text-primary me-2"></i>Daftar Riwayat Sesi Verifikasi
+        </h6>
+        <span class="badge bg-light text-muted border font-monospace">Total: {{ pagination.total }}</span>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th class="ps-3">ID</th>
-                        <th>Warga (NIK & Nama)</th>
+                        <th class="ps-4">ID</th>
+                        <th>Warga (Nama & NIK)</th>
                         <th>Program Bantuan</th>
-                        <th>Hasil Sistem (Rule Engine)</th>
+                        <th>Hasil Rule Engine</th>
                         <th>Status Final Petugas</th>
-                        <th>Tanggal Verifikasi</th>
-                        <th class="text-end pe-3">Aksi</th>
+                        <th>Waktu & Petugas</th>
+                        <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for v in pagination.items %}
                     <tr>
-                        <td class="ps-3 fw-bold text-muted">#{{ v.id }}</td>
+                        <td class="ps-4 fw-bold text-muted font-monospace">#{{ v.id }}</td>
                         <td>
-                            <div class="fw-bold text-dark">{{ v.warga.nama }}</div>
-                            <div class="small font-monospace text-primary">{{ v.warga.nik }}</div>
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="user-avatar-circle" style="width: 34px; height: 34px; font-size: 0.82rem; background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);">
+                                    {{ v.warga.nama[:1]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ v.warga.nama }}</div>
+                                    <div class="font-monospace small text-primary" style="font-size: 0.78rem;">{{ v.warga.nik }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td>
-                            <span class="badge bg-light text-dark border">{{ v.program.nama_program }}</span>
+                            <span class="badge bg-light text-dark border px-2.5 py-1">
+                                <i class="bi bi-gift text-primary me-1"></i>{{ v.program.nama_program }}
+                            </span>
                         </td>
                         <td>
-                            {% if v.status_otomatis == 'layak' %}
-                                <span class="badge status-badge-layak px-2 py-1">
-                                    <i class="bi bi-check-circle me-1"></i> Layak
-                                </span>
-                            {% elif v.status_otomatis == 'tidak_layak' %}
-                                <span class="badge status-badge-tidak-layak px-2 py-1">
-                                    <i class="bi bi-x-circle me-1"></i> Tidak Layak
-                                </span>
+                            {{ status_badge(v.status_otomatis) }}
+                        </td>
+                        <td>
+                            {% if v.status_final %}
+                                {{ status_badge(v.status_final) }}
                             {% else %}
-                                <span class="badge status-badge-perlu-tinjau px-2 py-1">
-                                    <i class="bi bi-exclamation-triangle me-1"></i> Perlu Ditinjau
+                                <span class="badge status-badge-pending rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-clock me-1"></i> Menunggu Konfirmasi
                                 </span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if v.status_final == 'layak' %}
-                                <span class="badge bg-success px-2 py-1"><i class="bi bi-check-all me-1"></i> Layak</span>
-                            {% elif v.status_final == 'tidak_layak' %}
-                                <span class="badge bg-danger px-2 py-1"><i class="bi bi-x-circle me-1"></i> Tidak Layak</span>
-                            {% elif v.status_final == 'perlu_ditinjau' %}
-                                <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-hourglass-split me-1"></i> Perlu Ditinjau</span>
-                            {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary border px-2 py-1"><i class="bi bi-clock me-1"></i> Menunggu Konfirmasi</span>
-                            {% endif %}
+                            <div class="small text-muted">
+                                <i class="bi bi-calendar3 me-1"></i>{{ v.tanggal_verifikasi.strftime('%d-%m-%Y %H:%M') if v.tanggal_verifikasi else '-' }}
+                            </div>
+                            <div class="small text-secondary" style="font-size: 0.72rem;">
+                                <i class="bi bi-person me-1"></i>Petugas: {{ v.petugas.nama }}
+                            </div>
                         </td>
-                        <td>
-                            <small class="text-muted d-block">{{ v.tanggal_verifikasi.strftime('%d-%m-%Y %H:%M') if v.tanggal_verifikasi else '-' }}</small>
-                            <small class="text-secondary">Oleh: {{ v.petugas.nama }}</small>
-                        </td>
-                        <td class="text-end pe-3">
+                        <td class="text-end pe-4">
                             <a href="{{ url_for('verifikasi.detail_verifikasi', id=v.id) }}" class="btn btn-sm btn-outline-primary">
-                                Audit Detail <i class="bi bi-chevron-right ms-1"></i>
+                                <span>Audit Detail</span>
+                                <i class="bi bi-chevron-right ms-0.5"></i>
                             </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
                         <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            Tidak ada riwayat verifikasi bansos yang sesuai filter.
+                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <div>Tidak ada riwayat verifikasi bansos yang sesuai filter pencarian.</div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -136,11 +151,11 @@
 
     <!-- Pagination Footer -->
     {% if pagination.pages > 1 %}
-    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3 border-top flex-wrap gap-2">
         <small class="text-muted">
             Menampilkan halaman {{ pagination.page }} dari {{ pagination.pages }} (Total: {{ pagination.total }} data)
         </small>
-        <nav>
+        <nav aria-label="Navigasi Halaman">
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                     <a class="page-link" href="{{ url_for('verifikasi.riwayat_verifikasi', page=pagination.prev_num, status=selected_status, program_id=selected_program, tanggal_mulai=tanggal_mulai, tanggal_selesai=tanggal_selesai) }}">Sebelumnya</a>
@@ -150,6 +165,8 @@
                         <li class="page-item {% if p == pagination.page %}active{% endif %}">
                             <a class="page-link" href="{{ url_for('verifikasi.riwayat_verifikasi', page=p, status=selected_status, program_id=selected_program, tanggal_mulai=tanggal_mulai, tanggal_selesai=tanggal_selesai) }}">{{ p }}</a>
                         </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
                     {% endif %}
                 {% endfor %}
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">

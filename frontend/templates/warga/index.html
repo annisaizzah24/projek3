@@ -1,46 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}Daftar Warga - Sociovault{% endblock %}
+{% block title %}Daftar Data Warga - SocioVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-people-fill me-2 text-primary"></i>Data Kependudukan Warga</h3>
-        <p class="text-muted mb-0">Kelola data warga, foto fisik rumah tinggal, dan klasifikasi desil penerima bantuan sosial</p>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-people-fill text-primary"></i>
+            <span>Data Kependudukan Warga</span>
+        </h3>
+        <p class="text-muted mb-0 small">
+            Kelola data kependudukan, dokumentasi fisik rumah tinggal, dan klasifikasi desil DTKS
+        </p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex align-items-center gap-2">
         <a href="{{ url_for('warga.tambah_keluarga') }}" class="btn btn-outline-primary">
-            <i class="bi bi-folder-plus me-1"></i> + Kartu Keluarga
+            <i class="bi bi-folder-plus"></i>
+            <span>+ Kartu Keluarga</span>
         </a>
         <a href="{{ url_for('warga.tambah_warga') }}" class="btn btn-primary">
-            <i class="bi bi-person-plus me-1"></i> + Tambah Warga
+            <i class="bi bi-person-plus-fill"></i>
+            <span>+ Tambah Warga</span>
         </a>
     </div>
 </div>
 
 <!-- Filter & Search Card -->
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
+    <div class="card-body p-3.5">
         <form method="GET" action="{{ url_for('warga.daftar_warga') }}" class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-lg-4 col-md-6">
                 <label class="form-label small fw-semibold">Pencarian NIK / Nama</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Cari nomor NIK atau nama warga..." value="{{ search }}">
+                    <input type="text" name="search" class="form-control" placeholder="Cari NIK 16 digit atau nama warga..." value="{{ search }}">
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label small fw-semibold">Filter Kartu Keluarga (KK)</label>
                 <select name="keluarga" class="form-select">
                     <option value="">-- Semua Keluarga --</option>
                     {% for k in daftar_keluarga %}
                         <option value="{{ k.id }}" {% if selected_keluarga == (k.id|string) or selected_keluarga == k.nomor_kk %}selected{% endif %}>
-                            No. KK: {{ k.nomor_kk }} — {{ k.kepala_keluarga }}
+                            KK: {{ k.nomor_kk }} ({{ k.kepala_keluarga }})
                         </option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label small fw-semibold">Filter Kategori Desil</label>
                 <select name="desil" class="form-select">
                     <option value="">-- Semua Desil (1-10) --</option>
@@ -51,12 +59,12 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2 d-flex gap-2">
+            <div class="col-lg-2 col-md-6 d-flex gap-2">
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel me-1"></i> Filter
+                    <i class="bi bi-funnel"></i> Filter
                 </button>
-                <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary">
-                    Reset
+                <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary" title="Reset Filter">
+                    <i class="bi bi-arrow-counterclockwise"></i>
                 </a>
             </div>
         </form>
@@ -65,35 +73,53 @@
 
 <!-- Table Card -->
 <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3.5 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-list-ul text-primary me-2"></i>Daftar Warga Terdaftar (Total: {{ pagination.total }})
+        </h6>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th class="ps-3">Warga & NIK</th>
+                        <th class="ps-4">Warga & NIK</th>
                         <th>Foto Rumah</th>
                         <th>Kategori Desil</th>
-                        <th>Gaji / Penghasilan</th>
+                        <th>Penghasilan / Bln</th>
                         <th>Kartu Keluarga</th>
-                        <th>Tanggungan / Aset</th>
-                        <th class="text-end pe-3">Aksi</th>
+                        <th>Tanggungan & Aset</th>
+                        <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for w in pagination.items %}
                     <tr>
-                        <td class="ps-3">
-                            <div class="fw-bold text-dark">{{ w.nama }}</div>
-                            <div class="font-monospace small text-primary fw-semibold">{{ w.nik }}</div>
-                            <div class="small text-muted">{{ w.alamat|truncate(30) }}</div>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="user-avatar-circle" style="width: 36px; height: 36px; font-size: 0.88rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                                    {{ w.nama[:1]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ w.nama }}</div>
+                                    <div class="font-monospace small text-primary" style="font-size: 0.8rem;">{{ w.nik }}</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;" title="{{ w.alamat }}">{{ w.alamat|truncate(28) }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td>
-                            <div class="rounded border overflow-hidden shadow-sm" style="width: 75px; height: 50px;">
+                            <div class="rounded-3 border overflow-hidden shadow-xs cursor-pointer img-thumb-trigger" 
+                                 style="width: 72px; height: 48px; cursor: pointer;" 
+                                 data-bs-toggle="modal" 
+                                 data-bs-target="#photoModal" 
+                                 data-img="{{ url_for('static', filename=w.foto_rumah_url) }}" 
+                                 data-title="Foto Rumah: {{ w.nama }}"
+                                 title="Klik untuk memperbesar foto">
                                 <img src="{{ url_for('static', filename=w.foto_rumah_url) }}" alt="Foto Rumah {{ w.nama }}" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                         </td>
                         <td>
-                            <span class="badge bg-{{ w.keterangan_desil.badge_class }} px-2 py-1">
+                            <span class="badge bg-{{ w.keterangan_desil.badge_class }} rounded-pill px-2.5 py-1">
                                 {{ w.keterangan_desil.label }}
                             </span>
                             <div class="small fw-semibold text-dark mt-1">{{ w.keterangan_desil.kategori }}</div>
@@ -103,22 +129,22 @@
                         </td>
                         <td>
                             <div class="fw-bold text-dark">{{ w.penghasilan|rupiah }}</div>
-                            <div class="small text-muted">/ bulan</div>
+                            <div class="small text-muted" style="font-size: 0.72rem;">Per Bulan</div>
                         </td>
                         <td>
-                            <div class="small fw-semibold text-dark">{{ w.keluarga.nomor_kk }}</div>
-                            <div class="text-muted small">{{ w.keluarga.kepala_keluarga }}</div>
+                            <div class="small fw-semibold text-dark font-monospace">{{ w.keluarga.nomor_kk }}</div>
+                            <div class="text-muted small" style="font-size: 0.75rem;">Kepala: {{ w.keluarga.kepala_keluarga }}</div>
                         </td>
                         <td>
-                            <div><span class="badge bg-secondary rounded-pill">{{ w.jumlah_tanggungan }} orang</span></div>
+                            <div><span class="badge bg-secondary rounded-pill">{{ w.jumlah_tanggungan }} Tanggungan</span></div>
                             <div class="small fw-semibold text-dark mt-1">Aset: {{ w.nilai_aset|rupiah }}</div>
-                            <div class="small text-muted" style="font-size: 0.75rem;">
-                                <i class="bi bi-house me-1"></i>{{ w.status_rumah_label }} | <i class="bi bi-lightning-charge me-1"></i>{{ w.daya_listrik or 450 }}VA
+                            <div class="small text-muted" style="font-size: 0.72rem;">
+                                <i class="bi bi-house me-1"></i>{{ w.status_rumah_label }} | {{ w.daya_listrik or 450 }}VA
                             </div>
                         </td>
-                        <td class="text-end pe-3">
+                        <td class="text-end pe-4">
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('desil.ajukan_perubahan', warga_id=w.id) }}" class="btn btn-outline-warning" title="Ajukan Perubahan Desil Warga">
+                                <a href="{{ url_for('desil.ajukan_perubahan', warga_id=w.id) }}" class="btn btn-outline-warning" title="Ajukan Sanggah / Perubahan Desil Warga">
                                     <i class="bi bi-arrow-repeat"></i>
                                 </a>
                                 <a href="{{ url_for('warga.edit_warga', id=w.id) }}" class="btn btn-outline-secondary" title="Edit Data Warga">
@@ -135,8 +161,9 @@
                     {% else %}
                     <tr>
                         <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            Tidak ada data warga yang sesuai kriteria pencarian/filter.
+                            <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <div>Tidak ada data warga yang sesuai kriteria pencarian atau filter.</div>
+                            <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary btn-sm mt-2">Reset Pencarian</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -145,7 +172,7 @@
         </div>
     </div>
     {% if pagination.pages > 1 %}
-    <div class="card-footer bg-white py-3">
+    <div class="card-footer bg-white py-3 border-top">
         <nav aria-label="Navigasi Halaman">
             <ul class="pagination pagination-sm justify-content-center mb-0">
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
@@ -162,4 +189,38 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Modal Photo Lightbox Preview (UX Delight) -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark" id="photoModalLabel">Dokumentasi Rumah</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 text-center bg-dark">
+                <img id="modalPreviewImg" src="" alt="Preview Foto Rumah" class="img-fluid" style="max-height: 550px; width: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const triggers = document.querySelectorAll(".img-thumb-trigger");
+        const modalImg = document.getElementById("modalPreviewImg");
+        const modalLabel = document.getElementById("photoModalLabel");
+
+        triggers.forEach(t => {
+            t.addEventListener("click", function() {
+                const src = this.getAttribute("data-img");
+                const title = this.getAttribute("data-title");
+                if (modalImg) modalImg.src = src;
+                if (modalLabel) modalLabel.textContent = title;
+            });
+        });
+    });
+</script>
 {% endblock %}

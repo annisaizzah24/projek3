@@ -1,15 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Tinjau Pengajuan Desil #{{ pengajuan.id }} - Sociovault{% endblock %}
+{% block title %}Tinjau Pengajuan Desil #{{ pengajuan.id }} - SocioVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h3 class="fw-bold mb-1">
-            <i class="bi bi-file-earmark-check-fill text-primary me-2"></i>
-            Tinjau & Verifikasi Pengajuan Desil #{{ pengajuan.id }}
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-check-fill text-primary"></i>
+            <span>Tinjau & Verifikasi Sanggah Desil #{{ pengajuan.id }}</span>
         </h3>
-        <p class="text-muted mb-0">Evaluasi bukti fisik foto rumah dan kesesuaian penghasilan riil warga pemohon</p>
+        <p class="text-muted mb-0 small">
+            Evaluasi bukti fisik foto rumah dan kesesuaian penghasilan riil warga pemohon
+        </p>
     </div>
     <div class="d-flex gap-2">
         {% if current_user.is_warga %}
@@ -25,33 +28,35 @@
 </div>
 
 <!-- Header Status Banner -->
-<div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
+<div class="card border-0 shadow-sm mb-4 overflow-hidden">
     <div class="card-body p-4 {% if pengajuan.status == 'menunggu' %}bg-warning bg-opacity-10 border-start border-warning border-5{% elif pengajuan.status == 'disetujui' %}bg-success bg-opacity-10 border-start border-success border-5{% else %}bg-danger bg-opacity-10 border-start border-danger border-5{% endif %}">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <span class="badge bg-light text-dark border font-monospace">ID: #REQ-{{ pengajuan.id }}</span>
-                    <span class="text-muted small">Diajukan oleh: <strong>{{ pengajuan.pemohon.nama }}</strong> ({{ pengajuan.tanggal_pengajuan.strftime('%d/%m/%Y %H:%M WIB') }})</span>
+                <div class="d-flex align-items-center gap-2 mb-1.5">
+                    <span class="badge bg-white text-dark border font-monospace">#REQ-{{ pengajuan.id }}</span>
+                    <span class="text-muted small">
+                        Diajukan oleh: <strong>{{ pengajuan.pemohon.nama }}</strong> ({{ pengajuan.tanggal_pengajuan.strftime('%d/%m/%Y %H:%M WIB') }})
+                    </span>
                 </div>
                 <h4 class="fw-bold mb-1 text-dark">
                     Warga: {{ pengajuan.warga.nama }} <span class="font-monospace text-primary fs-6">({{ pengajuan.warga.nik }})</span>
                 </h4>
                 <div class="text-muted small">
-                    <i class="bi bi-geo-alt me-1"></i> {{ pengajuan.warga.alamat }} — No. KK: {{ pengajuan.warga.keluarga.nomor_kk }}
+                    <i class="bi bi-geo-alt me-1"></i> {{ pengajuan.warga.alamat }} — No. KK: <span class="font-monospace">{{ pengajuan.warga.keluarga.nomor_kk }}</span>
                 </div>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <div class="small text-muted mb-1">Status Verifikasi:</div>
+                <div class="small text-muted fw-semibold mb-1">Status Verifikasi Permohonan:</div>
                 {% if pengajuan.status == 'menunggu' %}
-                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                    <span class="badge status-badge-perlu-tinjau rounded-pill px-3 py-2 fs-6">
                         <i class="bi bi-hourglass-split me-1"></i> MENUNGGU VERIFIKASI
                     </span>
                 {% elif pengajuan.status == 'disetujui' %}
-                    <span class="badge bg-success px-3 py-2 fs-6">
+                    <span class="badge status-badge-layak rounded-pill px-3 py-2 fs-6">
                         <i class="bi bi-check-circle-fill me-1"></i> TELAH DISETUJUI
                     </span>
                 {% else %}
-                    <span class="badge bg-danger px-3 py-2 fs-6">
+                    <span class="badge status-badge-tidak-layak rounded-pill px-3 py-2 fs-6">
                         <i class="bi bi-x-circle-fill me-1"></i> PENGAJUAN DITOLAK
                     </span>
                 {% endif %}
@@ -60,127 +65,123 @@
     </div>
 </div>
 
-<!-- Perbandingan Data: Data Lama vs Data Baru yang Diajukan -->
+<!-- Perbandingan Data: Before & After (Side-by-side) -->
 <div class="row g-4 mb-4">
-    <!-- Data Lama -->
+    <!-- Data Sebelumnya (Sistem) -->
     <div class="col-lg-6">
-        <div class="card border-0 shadow-sm rounded-3 h-100 border-top border-secondary border-3">
+        <div class="card border-0 shadow-sm h-100 border-top border-4 border-secondary">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="card-title fw-bold mb-0 text-dark">
-                    <i class="bi bi-archive text-secondary me-2"></i>Data Profil Sebelumnya (Sistem)
+                <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-archive text-secondary"></i>
+                    <span>Data Profil Sebelumnya (Sistem)</span>
                 </h6>
-                <span class="badge bg-secondary">Data Lama</span>
+                <span class="badge bg-secondary rounded-pill">Data Lama</span>
             </div>
             <div class="card-body p-4">
                 <!-- Foto Rumah Lama -->
                 <div class="text-center mb-3">
-                    <div class="rounded-3 overflow-hidden border shadow-sm position-relative d-inline-block" style="max-width: 100%;">
-                        <img src="{{ url_for('static', filename=pengajuan.warga.foto_rumah_url) }}" alt="Foto Rumah Lama" class="img-fluid rounded" style="max-height: 220px; width: 100%; object-fit: cover;">
-                        <span class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white py-1 px-2 small">
-                            <i class="bi bi-camera me-1"></i> Foto Rumah Terdata Sebelumnya
-                        </span>
+                    <div class="img-preview-frame" style="height: 190px;">
+                        <img src="{{ url_for('static', filename=pengajuan.warga.foto_rumah_url) }}" alt="Foto Rumah Lama" style="height: 100%;">
+                        <div class="img-preview-overlay">
+                            <span><i class="bi bi-camera me-1"></i> Foto Rumah Terdata Sebelumnya</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr>
-                            <td class="text-muted" style="width: 40%;">Desil Kesejahteraan:</td>
-                            <td>
-                                <span class="badge bg-{{ pengajuan.keterangan_desil_lama.badge_class }} fs-6 px-2 py-1">
-                                    {{ pengajuan.keterangan_desil_lama.label }}
-                                </span>
-                                <div class="small fw-semibold text-dark mt-1">{{ pengajuan.keterangan_desil_lama.kategori }}</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Kelayakan Bansos:</td>
-                            <td>
-                                <span class="small fw-bold {% if pengajuan.keterangan_desil_lama.is_layak_bansos %}text-success{% else %}text-danger{% endif %}">
-                                    {{ pengajuan.keterangan_desil_lama.kelayakan }}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Gaji Terdata:</td>
-                            <td class="fw-bold text-dark">{{ pengajuan.warga.penghasilan|rupiah }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Jumlah Tanggungan:</td>
-                            <td class="fw-semibold text-dark">{{ pengajuan.warga.jumlah_tanggungan }} Orang</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Estimasi Nilai Aset:</td>
-                            <td class="fw-semibold text-dark">{{ pengajuan.warga.nilai_aset|rupiah }}</td>
-                        </tr>
-                    </table>
+                <div class="small">
+                    <div class="d-flex justify-content-between py-1.5 border-bottom align-items-center">
+                        <span class="text-muted">Desil Kesejahteraan:</span>
+                        <div class="text-end">
+                            <span class="badge bg-{{ pengajuan.keterangan_desil_lama.badge_class }} rounded-pill">
+                                {{ pengajuan.keterangan_desil_lama.label }}
+                            </span>
+                            <div class="small fw-semibold text-dark mt-0.5" style="font-size: 0.72rem;">{{ pengajuan.keterangan_desil_lama.kategori }}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Kelayakan Bansos:</span>
+                        <span class="fw-semibold {% if pengajuan.keterangan_desil_lama.is_layak_bansos %}text-success{% else %}text-danger{% endif %}">
+                            {{ pengajuan.keterangan_desil_lama.kelayakan }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Gaji Terdata:</span>
+                        <strong class="text-dark">{{ pengajuan.warga.penghasilan|rupiah }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Jumlah Tanggungan:</span>
+                        <span class="badge bg-secondary rounded-pill">{{ pengajuan.warga.jumlah_tanggungan }} Orang</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5">
+                        <span class="text-muted">Estimasi Nilai Aset:</span>
+                        <strong class="text-dark">{{ pengajuan.warga.nilai_aset|rupiah }}</strong>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Data Diajukan (Kondisi Riil) -->
+    <!-- Data Baru yang Diajukan (Kondisi Riil) -->
     <div class="col-lg-6">
-        <div class="card border-0 shadow-sm rounded-3 h-100 border-top border-primary border-3">
+        <div class="card border-0 shadow-sm h-100 border-top border-4 border-primary">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="card-title fw-bold mb-0 text-dark">
-                    <i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Data Riil yang Diajukan Warga
+                <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-arrow-up text-primary"></i>
+                    <span>Data Riil yang Diajukan Warga</span>
                 </h6>
-                <span class="badge bg-primary">Bukti Baru</span>
+                <span class="badge bg-primary rounded-pill">Bukti Sanggah</span>
             </div>
             <div class="card-body p-4">
                 <!-- Foto Rumah Baru yang Diunggah -->
                 <div class="text-center mb-3">
-                    <div class="rounded-3 overflow-hidden border shadow-sm position-relative d-inline-block" style="max-width: 100%;">
-                        <a href="{{ url_for('static', filename=pengajuan.foto_rumah_baru) }}" target="_blank" title="Klik untuk memperbesar foto">
-                            <img src="{{ url_for('static', filename=pengajuan.foto_rumah_baru) }}" alt="Foto Rumah Baru" class="img-fluid rounded" style="max-height: 220px; width: 100%; object-fit: cover;">
-                        </a>
-                        <span class="position-absolute bottom-0 start-0 end-0 bg-primary bg-opacity-75 text-white py-1 px-2 small">
-                            <i class="bi bi-zoom-in me-1"></i> Bukti Fisik Foto Rumah Baru (Klik untuk Zoom)
-                        </span>
+                    <div class="img-preview-frame cursor-pointer img-thumb-trigger" 
+                         style="height: 190px; cursor: pointer;"
+                         data-bs-toggle="modal" 
+                         data-bs-target="#photoModal" 
+                         data-img="{{ url_for('static', filename=pengajuan.foto_rumah_baru) }}" 
+                         data-title="Bukti Foto Rumah Baru (Sanggah): {{ pengajuan.warga.nama }}">
+                        <img src="{{ url_for('static', filename=pengajuan.foto_rumah_baru) }}" alt="Foto Rumah Baru" style="height: 100%;">
+                        <div class="img-preview-overlay">
+                            <span><i class="bi bi-zoom-in me-1"></i> Bukti Fisik Foto Baru (Klik untuk Zoom)</span>
+                            <span class="badge bg-primary text-white" style="font-size: 0.65rem;">LAMPIRAN</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr>
-                            <td class="text-muted" style="width: 40%;">Desil yang Dimohon:</td>
-                            <td>
-                                <span class="badge bg-{{ pengajuan.keterangan_desil_diajukan.badge_class }} fs-6 px-2 py-1">
-                                    {{ pengajuan.keterangan_desil_diajukan.label }}
-                                </span>
-                                <div class="small fw-bold text-dark mt-1">{{ pengajuan.keterangan_desil_diajukan.kategori }}</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Target Kelayakan:</td>
-                            <td>
-                                <span class="small fw-bold text-success">
-                                    <i class="bi bi-check-circle-fill me-1"></i> Memenuhi Syarat Bansos
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Gaji Riil Dilaporkan:</td>
-                            <td class="fw-bold text-primary fs-6">{{ pengajuan.penghasilan_terkini|rupiah }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Tanggungan Riil:</td>
-                            <td class="fw-semibold text-dark">{{ pengajuan.jumlah_tanggungan }} Orang</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Dokumen Pendukung:</td>
-                            <td>
-                                {% if pengajuan.dokumen_pendukung %}
-                                <a href="{{ url_for('static', filename=pengajuan.dokumen_pendukung) }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-paperclip me-1"></i> Lihat Dokumen / SKTM
-                                </a>
-                                {% else %}
-                                <span class="text-muted small">Tidak melampirkan berkas tambahan</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
+                <div class="small">
+                    <div class="d-flex justify-content-between py-1.5 border-bottom align-items-center">
+                        <span class="text-muted">Desil yang Dimohon:</span>
+                        <div class="text-end">
+                            <span class="badge bg-{{ pengajuan.keterangan_desil_diajukan.badge_class }} rounded-pill">
+                                {{ pengajuan.keterangan_desil_diajukan.label }}
+                            </span>
+                            <div class="small fw-bold text-dark mt-0.5" style="font-size: 0.72rem;">{{ pengajuan.keterangan_desil_diajukan.kategori }}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Target Kelayakan:</span>
+                        <span class="fw-bold text-success">
+                            <i class="bi bi-check-circle-fill me-1"></i> Memenuhi Syarat Bansos
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Gaji Riil Dilaporkan:</span>
+                        <strong class="text-primary fs-6">{{ pengajuan.penghasilan_terkini|rupiah }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Tanggungan Riil:</span>
+                        <span class="badge bg-secondary rounded-pill">{{ pengajuan.jumlah_tanggungan }} Orang</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 align-items-center">
+                        <span class="text-muted">Dokumen Pendukung:</span>
+                        {% if pengajuan.dokumen_pendukung %}
+                        <a href="{{ url_for('static', filename=pengajuan.dokumen_pendukung) }}" target="_blank" class="btn btn-outline-primary btn-sm py-1">
+                            <i class="bi bi-paperclip me-1"></i> Lihat Dokumen / SKTM
+                        </a>
+                        {% else %}
+                        <span class="text-muted">Tidak melampirkan berkas</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,26 +189,28 @@
 </div>
 
 <!-- Alasan Pengajuan Warga -->
-<div class="card border-0 shadow-sm rounded-3 mb-4">
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white py-3 border-bottom">
-        <h6 class="card-title fw-bold mb-0 text-dark">
-            <i class="bi bi-chat-quote-fill text-primary me-2"></i>Alasan & Keterangan Kondisi Riil Warga
+        <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-chat-quote-fill text-primary"></i>
+            <span>Alasan & Keterangan Kondisi Riil Warga</span>
         </h6>
     </div>
     <div class="card-body p-4">
-        <blockquote class="blockquote mb-0 fs-6 text-dark p-3 bg-light rounded border-start border-primary border-4">
-            <p class="mb-0">"{{ pengajuan.alasan_pengajuan }}"</p>
+        <blockquote class="blockquote mb-0 fs-6 text-dark p-3.5 bg-light rounded-3 border-start border-primary border-4">
+            <p class="mb-0" style="font-style: italic; line-height: 1.6;">"{{ pengajuan.alasan_pengajuan }}"</p>
         </blockquote>
     </div>
 </div>
 
 <!-- Form Tindak Lanjut & Verifikasi Petugas -->
 {% if not current_user.is_warga %}
-<div class="card border-0 shadow-sm rounded-3 mb-4">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="card-title fw-bold mb-0 text-dark">
-            <i class="bi bi-shield-check text-primary me-2"></i>Form Pengesahan & Keputusan Petugas
-        </h5>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-primary"></i>
+            <span>Form Pengesahan & Keputusan Petugas</span>
+        </h6>
         {% if pengajuan.id_petugas %}
         <span class="text-muted small">
             Diverifikasi oleh: <strong>{{ pengajuan.petugas.nama }}</strong> ({{ pengajuan.tanggal_verifikasi.strftime('%d/%m/%Y %H:%M') }})
@@ -247,7 +250,7 @@
                     <label class="form-label fw-bold small text-dark">
                         {{ form.catatan_petugas.label.text }} <span class="text-danger">*</span>
                     </label>
-                    {{ form.catatan_petugas(class_="form-control" + (" is-invalid" if form.catatan_petugas.errors else ""), rows="3", placeholder="Tuliskan berita acara verifikasi faktual, hasil validasi foto rumah, dan alasan persetujuan atau penolakan.") }}
+                    {{ form.catatan_petugas(class_="form-control" + (" is-invalid" if form.catatan_petugas.errors else ""), rows="3", placeholder="Tuliskan berita acara verifikasi faktual, hasil validasi foto rumah, dan alasan persetujuan atau penolakan...") }}
                     {% for err in form.catatan_petugas.errors %}
                         <div class="invalid-feedback">{{ err }}</div>
                     {% endfor %}
@@ -269,7 +272,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a href="{{ url_for('desil.daftar_pengajuan') }}" class="btn btn-outline-secondary">Kembali</a>
-                    <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
                         <i class="bi bi-check2-circle me-1"></i> Sahkan Keputusan Verifikasi
                     </button>
                 </div>
@@ -278,45 +281,79 @@
     </div>
 </div>
 
-<!-- Tombol Cepat Eksekusi Verifikasi Bansos Warga Ini -->
+<!-- Quick Link to Run Rule Engine if Approved -->
 {% if pengajuan.status == 'disetujui' %}
-<div class="card border-0 bg-success bg-opacity-10 border border-success rounded-3 p-3">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+<div class="card border-0 bg-success bg-opacity-10 border border-success border-opacity-50 rounded-4 p-3.5 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
-            <h6 class="fw-bold text-success mb-1"><i class="bi bi-gift-fill me-2"></i>Data Warga Telah Diperbarui!</h6>
+            <h6 class="fw-bold text-success mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-gift-fill"></i> Data Warga Telah Diperbarui!
+            </h6>
             <p class="small text-muted mb-0">
                 Warga <strong>{{ pengajuan.warga.nama }}</strong> sekarang tercatat pada <strong>Desil {{ pengajuan.warga.desil }}</strong>. Anda dapat langsung menjalankan evaluasi Rule Engine bantuan sosial.
             </p>
         </div>
-        <div>
-            <a href="{{ url_for('verifikasi.mulai_verifikasi') }}" class="btn btn-success btn-sm">
-                <i class="bi bi-cpu me-1"></i> Buka Verifikasi Bansos
-            </a>
-        </div>
+        <a href="{{ url_for('verifikasi.mulai_verifikasi') }}" class="btn btn-success btn-sm shadow-sm">
+            <i class="bi bi-cpu me-1"></i> Buka Verifikasi Bansos
+        </a>
     </div>
 </div>
 {% endif %}
 
 {% else %}
-<!-- Tampilan Catatan Petugas untuk Akun Warga -->
+<!-- Citizen View: Officer Result Notes -->
 {% if pengajuan.catatan_petugas %}
-<div class="card border-0 shadow-sm rounded-3 mb-4">
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white py-3 border-bottom">
-        <h6 class="card-title fw-bold mb-0 text-dark">
-            <i class="bi bi-card-checklist text-primary me-2"></i>Hasil Pemeriksaan Petugas Kelurahan
+        <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-card-checklist text-primary"></i>
+            <span>Hasil Pemeriksaan Petugas Kelurahan</span>
         </h6>
     </div>
     <div class="card-body p-4">
-        <div class="p-3 rounded {% if pengajuan.status == 'disetujui' %}bg-success-subtle text-success border border-success{% else %}bg-danger-subtle text-danger border border-danger{% endif %}">
+        <div class="p-3.5 rounded-3 {% if pengajuan.status == 'disetujui' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
             <div class="fw-semibold small mb-1">Catatan Evaluator ({{ pengajuan.petugas.nama if pengajuan.petugas else 'Petugas' }}):</div>
-            <p class="mb-0">{{ pengajuan.catatan_petugas }}</p>
+            <p class="mb-0 text-dark">{{ pengajuan.catatan_petugas }}</p>
         </div>
         <div class="small text-muted mt-2">
-            Tanggal Verifikasi: {{ pengajuan.tanggal_verifikasi.strftime('%d/%m/%Y %H:%M') if pengajuan.tanggal_verifikasi else '-' }}
+            <i class="bi bi-calendar3 me-1"></i> Tanggal Verifikasi: {{ pengajuan.tanggal_verifikasi.strftime('%d/%m/%Y %H:%M') if pengajuan.tanggal_verifikasi else '-' }}
         </div>
     </div>
 </div>
 {% endif %}
 {% endif %}
 
+<!-- Modal Photo Lightbox Preview -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark" id="photoModalLabel">Dokumentasi Rumah Baru</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 text-center bg-dark">
+                <img id="modalPreviewImg" src="" alt="Preview Foto Rumah Baru" class="img-fluid" style="max-height: 550px; width: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const triggers = document.querySelectorAll(".img-thumb-trigger");
+        const modalImg = document.getElementById("modalPreviewImg");
+        const modalLabel = document.getElementById("photoModalLabel");
+
+        triggers.forEach(t => {
+            t.addEventListener("click", function() {
+                const src = this.getAttribute("data-img");
+                const title = this.getAttribute("data-title");
+                if (modalImg) modalImg.src = src;
+                if (modalLabel) modalLabel.textContent = title;
+            });
+        });
+    });
+</script>
 {% endblock %}

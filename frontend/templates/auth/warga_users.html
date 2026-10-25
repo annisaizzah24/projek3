@@ -1,57 +1,83 @@
 {% extends "base.html" %}
 
-{% block title %}Daftar Akun Warga - Sociovault{% endblock %}
+{% block title %}Daftar Akun Warga - SocioVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Daftar Akun Pengguna Warga</h3>
-        <p class="text-muted mb-0">Manajemen akun pengguna yang terdaftar dengan hak akses WARGA</p>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-people-fill text-primary"></i>
+            <span>Daftar Akun Pengguna Warga</span>
+        </h3>
+        <p class="text-muted mb-0 small">
+            Manajemen akun pengguna yang terdaftar dengan hak akses peran WARGA
+        </p>
     </div>
+    {% if current_user.is_admin %}
     <div class="d-flex gap-2">
         <a href="{{ url_for('auth.daftar_petugas') }}" class="btn btn-outline-primary">
             <i class="bi bi-person-gear me-1"></i> Kelola Petugas
         </a>
     </div>
+    {% endif %}
 </div>
 
-<div class="card border-0 shadow-sm rounded-3">
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3.5 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-person-vcard text-primary me-2"></i>Daftar Akun Warga Terdaftar
+        </h6>
+        <span class="badge bg-light text-muted border font-monospace">Total: {{ daftar_warga|length }}</span>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th class="ps-3">ID</th>
-                        <th>Nama Lengkap</th>
-                        <th>Username</th>
+                        <th class="ps-4">ID</th>
+                        <th>Warga (Nama & Username)</th>
                         <th>NIK Tertaut</th>
-                        <th>Role / Peran</th>
+                        <th>Peran / Role</th>
                         <th>Waktu Registrasi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for u in daftar_warga %}
                     <tr>
-                        <td class="ps-3 fw-bold text-muted">#{{ u.id }}</td>
-                        <td class="fw-semibold text-dark">{{ u.nama }}</td>
-                        <td class="font-monospace text-primary">{{ u.username }}</td>
+                        <td class="ps-4 fw-bold text-muted font-monospace">#{{ u.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="user-avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                    {{ u.nama[:1]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ u.nama }}</div>
+                                    <div class="font-monospace small text-primary" style="font-size: 0.78rem;">@{{ u.username }}</div>
+                                </div>
+                            </div>
+                        </td>
                         <td>
                             {% if u.nik %}
-                            <span class="font-monospace text-dark">{{ u.nik }}</span>
+                            <span class="font-monospace text-dark fw-semibold">{{ u.nik }}</span>
                             {% else %}
-                            <span class="text-muted small">Belum tertaut</span>
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Belum tertaut</span>
                             {% endif %}
                         </td>
                         <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">WARGA</span>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1">
+                                <i class="bi bi-person me-1"></i> WARGA
+                            </span>
                         </td>
-                        <td><small class="text-muted">{{ u.created_at.strftime('%d-%m-%Y %H:%M') if u.created_at else '-' }}</small></td>
+                        <td>
+                            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ u.created_at.strftime('%d-%m-%Y %H:%M') if u.created_at else '-' }}</small>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            <i class="bi bi-people fs-2 d-block mb-1"></i>
-                            Tidak ada akun pengguna dengan role warga.
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <div>Tidak ada akun pengguna dengan peran warga.</div>
                         </td>
                     </tr>
                     {% endfor %}

@@ -1,33 +1,67 @@
 {% extends "base.html" %}
 {% from "macros.html" import render_field %}
 
-{% block title %}Tambah Kartu Keluarga - Sociovault{% endblock %}
+{% block title %}Tambah Kartu Keluarga - SocioVault{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-6">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <div>
-                <h3 class="fw-bold mb-1"><i class="bi bi-folder-plus text-primary me-2"></i>Tambah Kartu Keluarga (KK)</h3>
-                <p class="text-muted mb-0">Daftarkan nomor KK baru sebelum menambahkan anggota keluarga</p>
+                <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                    <i class="bi bi-folder-plus text-primary"></i>
+                    <span>Tambah Kartu Keluarga (KK)</span>
+                </h3>
+                <p class="text-muted mb-0 small">
+                    Daftarkan nomor KK baru sebelum menambahkan data anggota keluarga ke dalam sistem
+                </p>
             </div>
             <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Kembali
             </a>
         </div>
 
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body p-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
                 <form method="POST">
                     {{ form.hidden_tag() }}
 
-                    {{ render_field(form.nomor_kk, placeholder="16 digit nomor KK", maxlength="16", help_text="Tepat 16 digit angka numerik, tidak boleh ada spasi atau simbol.") }}
-                    {{ render_field(form.kepala_keluarga, placeholder="Nama kepala keluarga sesuai dokumen KK") }}
-                    {{ render_field(form.alamat, rows="3", placeholder="Alamat domisili lengkap keluarga...") }}
+                    <div class="mb-3">
+                        <label for="{{ form.nomor_kk.id }}" class="form-label">
+                            <i class="bi bi-card-text me-1 text-primary"></i>{{ form.nomor_kk.label.text }} <span class="text-danger fw-bold">*</span>
+                        </label>
+                        {{ form.nomor_kk(class_="form-control font-monospace" + (" is-invalid" if form.nomor_kk.errors else ""), placeholder="16 digit nomor Kartu Keluarga", maxlength="16") }}
+                        {% for error in form.nomor_kk.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text mt-1 text-muted">
+                            <i class="bi bi-info-circle me-1"></i>Tepat 16 digit angka numerik, tidak boleh ada spasi atau simbol.
+                        </div>
+                    </div>
 
-                    <div class="d-flex justify-content-end gap-2 mt-4">
+                    <div class="mb-3">
+                        <label for="{{ form.kepala_keluarga.id }}" class="form-label">
+                            <i class="bi bi-person me-1 text-primary"></i>{{ form.kepala_keluarga.label.text }} <span class="text-danger fw-bold">*</span>
+                        </label>
+                        {{ form.kepala_keluarga(class_="form-control" + (" is-invalid" if form.kepala_keluarga.errors else ""), placeholder="Nama kepala keluarga sesuai dokumen KK") }}
+                        {% for error in form.kepala_keluarga.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.alamat.id }}" class="form-label">
+                            <i class="bi bi-geo-alt me-1 text-primary"></i>{{ form.alamat.label.text }}
+                        </label>
+                        {{ form.alamat(class_="form-control" + (" is-invalid" if form.alamat.errors else ""), rows="3", placeholder="Alamat domisili lengkap keluarga...") }}
+                        {% for error in form.alamat.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
                         <a href="{{ url_for('warga.daftar_warga') }}" class="btn btn-outline-secondary">Batal</a>
-                        <button type="submit" class="btn btn-primary px-4">
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 fw-semibold shadow-sm">
                             <i class="bi bi-save me-1"></i> Simpan Kartu Keluarga
                         </button>
                     </div>

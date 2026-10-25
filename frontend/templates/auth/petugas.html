@@ -1,50 +1,76 @@
 {% extends "base.html" %}
 
-{% block title %}Kelola Petugas - Sociovault{% endblock %}
+{% block title %}Kelola Petugas - SocioVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-person-gear text-primary me-2"></i>Kelola Petugas & Administrator</h3>
-        <p class="text-muted mb-0">Manajemen akun pengguna sistem dan hak akses role</p>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-person-gear text-primary"></i>
+            <span>Kelola Petugas & Administrator</span>
+        </h3>
+        <p class="text-muted mb-0 small">
+            Manajemen akun pengguna sistem dan hak akses peran verifikator serta administrator
+        </p>
     </div>
     <a href="{{ url_for('auth.tambah_petugas') }}" class="btn btn-primary">
-        <i class="bi bi-person-plus me-1"></i> + Tambah Petugas Baru
+        <i class="bi bi-person-plus-fill me-1"></i> + Tambah Petugas Baru
     </a>
 </div>
 
-<div class="card border-0 shadow-sm rounded-3">
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3.5 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-people-fill text-primary me-2"></i>Daftar Petugas & Administrator Terdaftar
+        </h6>
+        <span class="badge bg-light text-muted border font-monospace">Total: {{ daftar_user|length }}</span>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th class="ps-3">ID</th>
-                        <th>Nama Lengkap</th>
-                        <th>Username</th>
-                        <th>Role / Peran</th>
+                        <th class="ps-4">ID</th>
+                        <th>Petugas (Nama & Username)</th>
+                        <th>Peran / Role</th>
                         <th>Waktu Dibuat</th>
-                        <th class="text-end pe-3">Aksi</th>
+                        <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for u in daftar_user %}
                     <tr>
-                        <td class="ps-3 fw-bold text-muted">#{{ u.id }}</td>
-                        <td class="fw-semibold text-dark">{{ u.nama }}</td>
-                        <td class="font-monospace text-primary">{{ u.username }}</td>
+                        <td class="ps-4 fw-bold text-muted font-monospace">#{{ u.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="user-avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem; background: {% if u.role == 'admin' %}linear-gradient(135deg, #ef4444 0%, #b91c1c 100%){% else %}linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%){% endif %};">
+                                    {{ u.nama[:1]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ u.nama }}</div>
+                                    <div class="font-monospace small text-primary" style="font-size: 0.78rem;">@{{ u.username }}</div>
+                                </div>
+                            </div>
+                        </td>
                         <td>
                             {% if u.role == 'admin' %}
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">ADMINISTRATOR</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-shield-fill me-1"></i> ADMINISTRATOR
+                                </span>
                             {% elif u.role == 'petugas_verifikasi' %}
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">PETUGAS VERIFIKASI</span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-patch-check-fill me-1"></i> PETUGAS VERIFIKASI
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">{{ u.role|upper }}</span>
+                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-1">{{ u.role|upper }}</span>
                             {% endif %}
                         </td>
-                        <td><small class="text-muted">{{ u.created_at.strftime('%d-%m-%Y') if u.created_at else '-' }}</small></td>
-                        <td class="text-end pe-3">
-                            <div class="d-inline-flex align-items-center gap-1">
+                        <td>
+                            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ u.created_at.strftime('%d-%m-%Y') if u.created_at else '-' }}</small>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex align-items-center gap-1.5">
                                 <a href="{{ url_for('auth.edit_petugas', id=u.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit Akun">
                                     <i class="bi bi-pencil"></i>
                                 </a>
@@ -62,9 +88,9 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            <i class="bi bi-people fs-2 d-block mb-1"></i>
-                            Tidak ada akun petugas atau administrator.
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <div>Tidak ada data akun petugas atau administrator.</div>
                         </td>
                     </tr>
                     {% endfor %}

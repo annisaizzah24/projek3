@@ -1,22 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}404 Halaman Tidak Ditemukan - Sociovault{% endblock %}
+{% block title %}404 Halaman Tidak Ditemukan - SocioVault{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center pt-5">
-    <div class="col-md-6 text-center">
-        <div class="display-1 text-primary fw-bold mb-3"><i class="bi bi-question-circle"></i> 404</div>
-        <h3 class="fw-bold text-dark">Halaman Tidak Ditemukan</h3>
-        <p class="text-muted mb-4">
-            Alamat URL yang Anda tuju tidak ditemukan atau data terkait telah dipindahkan atau dihapus.
-        </p>
-        <div class="d-flex justify-content-center gap-2">
-            <a href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('auth.login') }}" class="btn btn-primary">
-                <i class="bi bi-house-door me-1"></i> Kembali ke Dashboard
-            </a>
-            <a href="javascript:history.back()" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Halaman Sebelumnya
-            </a>
+    <div class="col-md-7 col-lg-5">
+        <div class="card border-0 shadow-lg rounded-4 text-center p-4 p-md-5">
+            <div class="stat-icon primary mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2.25rem; border-radius: 20px;">
+                <i class="bi bi-question-circle"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">404 — Halaman Tidak Ditemukan</h3>
+            <p class="text-muted small mb-4">
+                Alamat URL yang Anda tuju tidak ditemukan atau data terkait telah dipindahkan atau dihapus dari sistem.
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('auth.login') }}" class="btn btn-primary px-3">
+                    <i class="bi bi-house-door me-1"></i> Kembali ke Dashboard
+                </a>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary px-3">
+                    <i class="bi bi-arrow-left me-1"></i> Halaman Sebelumnya
+                </a>
+            </div>
         </div>
     </div>
 </div>

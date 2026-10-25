@@ -1,264 +1,319 @@
 {% extends "base.html" %}
 {% from "macros.html" import render_field, status_badge %}
 
-{% block title %}Detail Audit Verifikasi #{{ verif.id }} - Sociovault{% endblock %}
+{% block title %}Detail Audit Verifikasi #{{ verif.id }} - SocioVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h3 class="fw-bold mb-1">
-            <i class="bi bi-file-earmark-medical-fill text-primary me-2"></i>
-            Audit & Hasil Verifikasi #{{ verif.id }}
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-medical-fill text-primary"></i>
+            <span>Detail Audit Verifikasi #{{ verif.id }}</span>
         </h3>
-        <p class="text-muted mb-0">Rincian evaluasi Rule Engine sistem dan penetapan konfirmasi petugas</p>
+        <p class="text-muted mb-0 small">
+            Rincian evaluasi Rule Engine sistem dan penetapan konfirmasi kelayakan oleh petugas
+        </p>
     </div>
+    {% if current_user.is_warga %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
+    </a>
+    {% else %}
     <a href="{{ url_for('verifikasi.riwayat_verifikasi') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i> Kembali ke Riwayat
     </a>
+    {% endif %}
+</div>
+
+<!-- Main Status Banner -->
+<div class="card border-0 shadow-sm mb-4 overflow-hidden">
+    <div class="card-body p-4 {% if verif.status_final == 'layak' or (not verif.status_final and verif.status_otomatis == 'layak') %}bg-success bg-opacity-10 border-start border-success border-5{% elif verif.status_final == 'tidak_layak' or (not verif.status_final and verif.status_otomatis == 'tidak_layak') %}bg-danger bg-opacity-10 border-start border-danger border-5{% else %}bg-warning bg-opacity-10 border-start border-warning border-5{% endif %}">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <div class="d-flex align-items-center gap-2 mb-1.5">
+                    <span class="badge bg-white text-dark border font-monospace">VERIF-ID: #{{ verif.id }}</span>
+                    <span class="badge bg-light text-primary border">
+                        <i class="bi bi-gift me-1"></i>{{ verif.program.nama_program }}
+                    </span>
+                </div>
+                <h4 class="fw-bold text-dark mb-1">
+                    {{ verif.warga.nama }} <span class="font-monospace text-primary fs-6">({{ verif.warga.nik }})</span>
+                </h4>
+                <div class="text-muted small">
+                    <i class="bi bi-clock me-1"></i> Dievaluasi pada {{ verif.tanggal_verifikasi.strftime('%d/%m/%Y %H:%M WIB') if verif.tanggal_verifikasi else '-' }} oleh <strong>{{ verif.petugas.nama }}</strong>
+                </div>
+            </div>
+            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                <div class="d-inline-flex flex-column align-items-md-end gap-1">
+                    <div class="small text-muted fw-semibold">Status Sistem (Rule Engine):</div>
+                    {{ status_badge(verif.status_otomatis) }}
+                    {% if verif.status_final %}
+                        <div class="small text-muted fw-semibold mt-1">Status Final Petugas:</div>
+                        {{ status_badge(verif.status_final) }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-4">
-    <!-- Left Column: Data Profil & Program -->
-    <div class="col-lg-6">
-        <!-- Profil Warga -->
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
+    <!-- Left Column: Data Profil Warga & Kriteria Program -->
+    <div class="col-lg-5">
+        <!-- Profil Data Warga -->
+        <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3 border-bottom">
-                <h5 class="card-title fw-bold mb-0"><i class="bi bi-person-lines-fill text-primary me-2"></i>Profil Data Warga</h5>
+                <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-person-lines-fill text-primary"></i>
+                    <span>Profil & Kondisi Fisik Warga</span>
+                </h6>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <!-- Foto Fisik: Rumah & Kendaraan -->
                 <div class="row g-2 text-center mb-3">
                     <div class="col-{% if verif.warga.foto_kendaraan %}6{% else %}12{% endif %}">
-                        <div class="rounded-3 overflow-hidden border shadow-sm position-relative d-inline-block w-100">
-                            <img src="{{ url_for('static', filename=verif.warga.foto_rumah_url) }}" alt="Foto Rumah Warga" class="img-fluid rounded" style="height: 150px; width: 100%; object-fit: cover;">
-                            <span class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white py-1 px-2 small">
-                                <i class="bi bi-camera me-1"></i> Rumah
-                            </span>
+                        <div class="img-preview-frame" style="height: 140px;">
+                            <img src="{{ url_for('static', filename=verif.warga.foto_rumah_url) }}" alt="Foto Rumah Warga" style="height: 100%;">
+                            <div class="img-preview-overlay">
+                                <span><i class="bi bi-camera me-1"></i> Rumah</span>
+                                <span class="badge bg-light text-dark font-monospace" style="font-size: 0.65rem;">RIIL</span>
+                            </div>
                         </div>
                     </div>
                     {% if verif.warga.foto_kendaraan %}
                     <div class="col-6">
-                        <div class="rounded-3 overflow-hidden border shadow-sm position-relative d-inline-block w-100">
-                            <img src="{{ url_for('static', filename=verif.warga.foto_kendaraan) }}" alt="Foto Kendaraan" class="img-fluid rounded" style="height: 150px; width: 100%; object-fit: cover;">
-                            <span class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white py-1 px-2 small">
-                                <i class="bi bi-bicycle me-1"></i> Kendaraan
-                            </span>
+                        <div class="img-preview-frame" style="height: 140px;">
+                            <img src="{{ url_for('static', filename=verif.warga.foto_kendaraan) }}" alt="Foto Kendaraan" style="height: 100%;">
+                            <div class="img-preview-overlay">
+                                <span><i class="bi bi-bicycle me-1"></i> Kendaraan</span>
+                            </div>
                         </div>
                     </div>
                     {% endif %}
                 </div>
 
-                <div class="row g-2">
-                    <div class="col-4 text-muted">Nama Lengkap:</div>
-                    <div class="col-8 fw-bold">{{ verif.warga.nama }}</div>
-
-                    <div class="col-4 text-muted">Nomor NIK:</div>
-                    <div class="col-8 font-monospace text-primary fw-bold">{{ verif.warga.nik }}</div>
-
-                    <div class="col-4 text-muted">Kategori Desil:</div>
-                    <div class="col-8">
-                        <span class="badge bg-{{ verif.warga.keterangan_desil.badge_class }}">{{ verif.warga.keterangan_desil.label }}</span>
-                        <span class="small fw-semibold text-dark ms-1">{{ verif.warga.keterangan_desil.kategori }}</span>
+                <div class="small">
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Nama Lengkap:</span>
+                        <strong class="text-dark">{{ verif.warga.nama }}</strong>
                     </div>
-
-                    <div class="col-4 text-muted">Kartu Keluarga:</div>
-                    <div class="col-8">{{ verif.warga.keluarga.nomor_kk }} ({{ verif.warga.keluarga.kepala_keluarga }})</div>
-
-                    <div class="col-4 text-muted">Alamat:</div>
-                    <div class="col-8">{{ verif.warga.alamat }}</div>
-
-                    <div class="col-4 text-muted">Penghasilan:</div>
-                    <div class="col-8 fw-bold text-dark">{{ verif.warga.penghasilan|rupiah }} / bulan</div>
-
-                    <div class="col-4 text-muted">Tanggungan:</div>
-                    <div class="col-8"><span class="badge bg-secondary rounded-pill">{{ verif.warga.jumlah_tanggungan }} orang</span></div>
-
-                    <div class="col-4 text-muted">Total Nilai Aset:</div>
-                    <div class="col-8 fw-semibold text-dark">{{ verif.warga.nilai_aset|rupiah }}</div>
-
-                    <div class="col-4 text-muted">Status Rumah:</div>
-                    <div class="col-8">
-                        <span class="badge bg-light text-dark border">{{ verif.warga.status_rumah_label }}</span>
-                        <span class="small text-muted ms-1">({{ verif.warga.luas_tanah or 0 }} m²)</span>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Nomor NIK:</span>
+                        <strong class="font-monospace text-primary">{{ verif.warga.nik }}</strong>
                     </div>
-
-                    <div class="col-4 text-muted">Meteran Listrik:</div>
-                    <div class="col-8">
+                    <div class="d-flex justify-content-between py-1.5 border-bottom align-items-center">
+                        <span class="text-muted">Kategori Desil:</span>
+                        <div class="text-end">
+                            <span class="badge bg-{{ verif.warga.keterangan_desil.badge_class }} rounded-pill">{{ verif.warga.keterangan_desil.label }}</span>
+                            <div class="small fw-semibold text-dark mt-0.5" style="font-size: 0.72rem;">{{ verif.warga.keterangan_desil.kategori }}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Kartu Keluarga:</span>
+                        <span class="text-dark font-monospace">{{ verif.warga.keluarga.nomor_kk }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Penghasilan / Bulan:</span>
+                        <strong class="text-dark">{{ verif.warga.penghasilan|rupiah }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Jumlah Tanggungan:</span>
+                        <span class="badge bg-secondary rounded-pill">{{ verif.warga.jumlah_tanggungan }} Orang</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Total Nilai Aset:</span>
+                        <strong class="text-dark">{{ verif.warga.nilai_aset|rupiah }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Status Bangunan:</span>
+                        <span class="text-dark">{{ verif.warga.status_rumah_label }} ({{ verif.warga.luas_tanah or 0 }} m²)</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1.5 border-bottom">
+                        <span class="text-muted">Meteran Listrik:</span>
                         <span class="badge bg-info-subtle text-info-emphasis border">{{ verif.warga.daya_listrik_label }}</span>
                     </div>
-
-                    <div class="col-4 text-muted">Kendaraan:</div>
-                    <div class="col-8">
-                        <span class="fw-semibold text-dark">{{ verif.warga.jenis_kendaraan_label }}</span>
-                        {% if verif.warga.jumlah_kendaraan and verif.warga.jumlah_kendaraan > 0 %}
-                            <span class="badge bg-secondary rounded-pill ms-1">{{ verif.warga.jumlah_kendaraan }} unit</span>
-                        {% endif %}
+                    <div class="d-flex justify-content-between py-1.5">
+                        <span class="text-muted">Kepemilikan Kendaraan:</span>
+                        <span class="text-dark">{{ verif.warga.jenis_kendaraan_label }} ({{ verif.warga.jumlah_kendaraan or 0 }} unit)</span>
                     </div>
-
-                    <div class="col-4 text-muted">Tanggal Lahir:</div>
-                    <div class="col-8">{{ verif.warga.tanggal_lahir.strftime('%d-%m-%Y') if verif.warga.tanggal_lahir else '-' }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Kriteria Program -->
-        <div class="card border-0 shadow-sm rounded-3">
+        <!-- Kriteria Program Bantuan -->
+        <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3 border-bottom">
-                <h5 class="card-title fw-bold mb-0"><i class="bi bi-gift text-primary me-2"></i>Kriteria Program Bantuan</h5>
+                <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-gift text-primary"></i>
+                    <span>Kriteria Ketentuan Program</span>
+                </h6>
             </div>
-            <div class="card-body">
-                <h6 class="fw-bold text-dark">{{ verif.program.nama_program }}</h6>
-                <p class="text-muted small mb-3">{{ verif.program.deskripsi or 'Tidak ada deskripsi rinci.' }}</p>
-                <div class="p-3 bg-light rounded-2 border">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="small text-muted">Batas Maksimal Desil:</span>
-                        <span class="small fw-bold text-primary">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-1">{{ verif.program.nama_program }}</h6>
+                <p class="text-muted small mb-3">{{ verif.program.deskripsi or 'Tidak ada keterangan tambahan.' }}</p>
+
+                <div class="p-3 bg-light rounded-3 border small">
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Batas Maksimal Desil:</span>
+                        <strong class="text-primary">
                             {% if verif.program.kriteria_desil_max %}
                                 &le; Desil {{ verif.program.kriteria_desil_max }}
                             {% else %}
-                                Tanpa Batasan Desil
+                                Tanpa Batasan
                             {% endif %}
-                        </span>
+                        </strong>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="small text-muted">Batas Penghasilan Maks:</span>
-                        <span class="small fw-bold">&le; {{ verif.program.kriteria_penghasilan_max|rupiah }}</span>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Batas Gaji Maksimal:</span>
+                        <strong class="text-dark">&le; {{ verif.program.kriteria_penghasilan_max|rupiah }}</strong>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="small text-muted">Syarat Min. Tanggungan:</span>
-                        <span class="small fw-bold">&ge; {{ verif.program.kriteria_tanggungan_min }} orang</span>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Min. Tanggungan:</span>
+                        <strong class="text-dark">&ge; {{ verif.program.kriteria_tanggungan_min }} Orang</strong>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="small text-muted">Batas Aset Maksimal:</span>
-                        <span class="small fw-bold">
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Batas Aset Maksimal:</span>
+                        <strong class="text-dark">
                             {{ verif.program.kriteria_aset_max|rupiah if verif.program.kriteria_aset_max is not none else 'Tanpa Batasan' }}
-                        </span>
+                        </strong>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Right Column: Rule Engine Result & Confirmation -->
-    <div class="col-lg-6">
+    <!-- Right Column: Rule Engine Result & Officer Confirmation -->
+    <div class="col-lg-7">
         <!-- Rule Engine Outcome Card -->
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="card-title fw-bold mb-0"><i class="bi bi-cpu text-primary me-2"></i>Hasil Evaluasi Sistem (Rule Engine)</h5>
-                {% if verif.status_otomatis == 'layak' %}
-                    <span class="badge bg-success px-3 py-2 fs-6"><i class="bi bi-check-circle me-1"></i> LAYAK</span>
-                {% elif verif.status_otomatis == 'tidak_layak' %}
-                    <span class="badge bg-danger px-3 py-2 fs-6"><i class="bi bi-x-circle me-1"></i> TIDAK LAYAK</span>
-                {% else %}
-                    <span class="badge bg-warning text-dark px-3 py-2 fs-6"><i class="bi bi-exclamation-triangle me-1"></i> PERLU DITINJAU</span>
-                {% endif %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-cpu-fill text-primary"></i>
+                    <span>Breakdown Audit Pengecekan Rule Engine</span>
+                </h6>
+                <span class="badge bg-light text-dark border font-monospace">100% Objektif</span>
             </div>
-            <div class="card-body">
-                <p class="mb-1"><strong>Waktu Evaluasi:</strong> <span class="text-muted">{{ verif.tanggal_verifikasi.strftime('%d-%m-%Y %H:%M:%S') if verif.tanggal_verifikasi else '-' }}</span></p>
-                <p class="mb-3"><strong>Petugas Evaluator:</strong> <span class="text-muted">{{ verif.petugas.nama }} ({{ verif.petugas.username }})</span></p>
-
-                <!-- Audit Breakdown Table -->
-                <h6 class="fw-bold mt-3 mb-2">Breakdown Audit Pengecekan Kriteria:</h6>
+            <div class="card-body p-4">
                 {% if verif.detail_pengecekan %}
                     {% if verif.detail_pengecekan.get('field_kurang') %}
-                    <div class="alert alert-warning small mb-3">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                        <strong>Data Kurang / Kosong:</strong> {{ verif.detail_pengecekan.get('field_kurang')|join(', ') }}
+                    <div class="alert alert-warning small mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
+                        <div>
+                            <strong>Data Profil Kurang:</strong> {{ verif.detail_pengecekan.get('field_kurang')|join(', ') }}
+                        </div>
                     </div>
                     {% endif %}
 
                     {% set kriteria = verif.detail_pengecekan.get('kriteria_pengecekan') %}
                     {% if kriteria %}
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Kriteria</th>
-                                    <th>Nilai Warga</th>
-                                    <th>Ketentuan Program</th>
-                                    <th>Hasil</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if 'penghasilan' in kriteria %}
-                                <tr>
-                                    <td>Penghasilan</td>
-                                    <td>Rp {{ "{:,.2f}".format(kriteria['penghasilan']['nilai']) }}</td>
-                                    <td>Maks: Rp {{ "{:,.2f}".format(kriteria['penghasilan']['batas_maksimal']) }}</td>
-                                    <td>
-                                        {% if kriteria['penghasilan']['lolos'] %}
-                                            <span class="badge bg-success">Lolos</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Gagal</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <!-- 1. Kriteria Penghasilan -->
+                        {% if 'penghasilan' in kriteria %}
+                        <div class="rule-audit-card {% if kriteria['penghasilan']['lolos'] %}pass{% else %}fail{% endif %}">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-cash-stack {% if kriteria['penghasilan']['lolos'] %}text-success{% else %}text-danger{% endif %} fs-5"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark">Penghasilan Bulanan</div>
+                                        <div class="small text-muted">
+                                            Nilai Warga: <strong>Rp {{ "{:,.2f}".format(kriteria['penghasilan']['nilai']) }}</strong> 
+                                            | Maks: Rp {{ "{:,.2f}".format(kriteria['penghasilan']['batas_maksimal']) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                {% if kriteria['penghasilan']['lolos'] %}
+                                    <span class="badge status-badge-layak rounded-pill px-3 py-1.5"><i class="bi bi-check-circle-fill me-1"></i> Lolos</span>
+                                {% else %}
+                                    <span class="badge status-badge-tidak-layak rounded-pill px-3 py-1.5"><i class="bi bi-x-circle-fill me-1"></i> Gagal</span>
                                 {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
 
-                                {% if 'tanggungan' in kriteria %}
-                                <tr>
-                                    <td>Tanggungan</td>
-                                    <td>{{ kriteria['tanggungan']['nilai'] }} orang</td>
-                                    <td>Min: {{ kriteria['tanggungan']['batas_minimal'] }} orang</td>
-                                    <td>
-                                        {% if kriteria['tanggungan']['lolos'] %}
-                                            <span class="badge bg-success">Lolos</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Gagal</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                        <!-- 2. Kriteria Tanggungan -->
+                        {% if 'tanggungan' in kriteria %}
+                        <div class="rule-audit-card {% if kriteria['tanggungan']['lolos'] %}pass{% else %}fail{% endif %}">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-people {% if kriteria['tanggungan']['lolos'] %}text-success{% else %}text-danger{% endif %} fs-5"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark">Jumlah Tanggungan Keluarga</div>
+                                        <div class="small text-muted">
+                                            Nilai Warga: <strong>{{ kriteria['tanggungan']['nilai'] }} Orang</strong> 
+                                            | Syarat Min: {{ kriteria['tanggungan']['batas_minimal'] }} Orang
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                {% if kriteria['tanggungan']['lolos'] %}
+                                    <span class="badge status-badge-layak rounded-pill px-3 py-1.5"><i class="bi bi-check-circle-fill me-1"></i> Lolos</span>
+                                {% else %}
+                                    <span class="badge status-badge-tidak-layak rounded-pill px-3 py-1.5"><i class="bi bi-x-circle-fill me-1"></i> Gagal</span>
                                 {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
 
-                                {% if 'aset' in kriteria %}
-                                <tr>
-                                    <td>Kepemilikan Aset</td>
-                                    <td>Rp {{ "{:,.2f}".format(kriteria['aset']['nilai']) }}</td>
-                                    <td>
-                                        {% if kriteria['aset']['batas_maksimal'] %}
-                                            Maks: Rp {{ "{:,.2f}".format(kriteria['aset']['batas_maksimal']) }}
-                                        {% else %}
-                                            Tanpa Batas
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if kriteria['aset']['lolos'] %}
-                                            <span class="badge bg-success">Lolos</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Gagal</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                        <!-- 3. Kriteria Aset -->
+                        {% if 'aset' in kriteria %}
+                        <div class="rule-audit-card {% if kriteria['aset']['lolos'] %}pass{% else %}fail{% endif %}">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-wallet2 {% if kriteria['aset']['lolos'] %}text-success{% else %}text-danger{% endif %} fs-5"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark">Kepemilikan Nilai Aset</div>
+                                        <div class="small text-muted">
+                                            Nilai Warga: <strong>Rp {{ "{:,.2f}".format(kriteria['aset']['nilai']) }}</strong>
+                                            | Batas Maks: {% if kriteria['aset']['batas_maksimal'] %}Rp {{ "{:,.2f}".format(kriteria['aset']['batas_maksimal']) }}{% else %}Bebas{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                {% if kriteria['aset']['lolos'] %}
+                                    <span class="badge status-badge-layak rounded-pill px-3 py-1.5"><i class="bi bi-check-circle-fill me-1"></i> Lolos</span>
+                                {% else %}
+                                    <span class="badge status-badge-tidak-layak rounded-pill px-3 py-1.5"><i class="bi bi-x-circle-fill me-1"></i> Gagal</span>
                                 {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
 
-                                {% if 'desil' in kriteria %}
-                                <tr>
-                                    <td>Kategori Desil Kesejahteraan</td>
-                                    <td>Desil {{ kriteria['desil']['nilai'] }} ({{ kriteria['desil'].get('kategori_warga', '') }})</td>
-                                    <td>
-                                        {% if kriteria['desil']['batas_maksimal'] %}
-                                            &le; Desil {{ kriteria['desil']['batas_maksimal'] }}
-                                        {% else %}
-                                            Tanpa Batasan Desil
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if kriteria['desil']['lolos'] %}
-                                            <span class="badge bg-success">Lolos</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Gagal</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                        <!-- 4. Kriteria Desil -->
+                        {% if 'desil' in kriteria %}
+                        <div class="rule-audit-card {% if kriteria['desil']['lolos'] %}pass{% else %}fail{% endif %}">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-bar-chart-steps {% if kriteria['desil']['lolos'] %}text-success{% else %}text-danger{% endif %} fs-5"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark">Kategori Desil Kesejahteraan</div>
+                                        <div class="small text-muted">
+                                            Desil Warga: <strong>Desil {{ kriteria['desil']['nilai'] }}</strong> ({{ kriteria['desil'].get('kategori_warga', '') }})
+                                            | Maks: {% if kriteria['desil']['batas_maksimal'] %}&le; Desil {{ kriteria['desil']['batas_maksimal'] }}{% else %}Semua Desil{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                {% if kriteria['desil']['lolos'] %}
+                                    <span class="badge status-badge-layak rounded-pill px-3 py-1.5"><i class="bi bi-check-circle-fill me-1"></i> Lolos</span>
+                                {% else %}
+                                    <span class="badge status-badge-tidak-layak rounded-pill px-3 py-1.5"><i class="bi bi-x-circle-fill me-1"></i> Gagal</span>
                                 {% endif %}
-                            </tbody>
-                        </table>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                     {% endif %}
 
                     {% if verif.detail_pengecekan.get('ringkasan') %}
-                    <div class="alert alert-secondary small mb-0 mt-2">
-                        <strong>Catatan Rule Engine:</strong> {{ verif.detail_pengecekan.get('ringkasan') }}
+                    <div class="p-3 bg-light rounded-3 border small text-muted">
+                        <strong class="text-dark"><i class="bi bi-chat-left-quote me-1"></i>Ringkasan Audit Engine:</strong>
+                        <div class="mt-1">{{ verif.detail_pengecekan.get('ringkasan') }}</div>
                     </div>
                     {% endif %}
                 {% endif %}
@@ -266,48 +321,68 @@
         </div>
 
         <!-- Official Petugas Confirmation Card -->
-        <div class="card border-0 shadow-sm rounded-3 border-top border-4 border-primary">
-            <div class="card-header bg-white py-3 border-bottom">
-                <h5 class="card-title fw-bold mb-0"><i class="bi bi-patch-check text-primary me-2"></i>Konfirmasi & Pengesahan Petugas</h5>
+        <div class="card border-0 shadow-sm border-top border-4 border-primary">
+            <div class="card-header bg-white py-3.5 border-bottom">
+                <h6 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-patch-check-fill text-primary"></i>
+                    <span>Konfirmasi & Pengesahan Petugas</span>
+                </h6>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 {% if verif.tanggal_konfirmasi %}
-                    <!-- STATUS FINAL TERKUNCI (HANYA SEKALI) -->
+                    <!-- STATUS FINAL TERKUNCI -->
                     <div class="alert alert-{{ 'success' if verif.status_final == 'layak' else ('danger' if verif.status_final == 'tidak_layak' else 'warning') }} mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="alert-heading fw-bold mb-1">Status Final Telah Dikonfirmasi</h6>
+                                <h6 class="alert-heading fw-bold mb-1">Status Final Telah Disahkan</h6>
                                 <p class="mb-0">Keputusan Resmi: <strong>{{ verif.status_final|upper }}</strong></p>
                             </div>
-                            <i class="bi bi-lock-fill fs-2"></i>
+                            <i class="bi bi-shield-lock-fill fs-2"></i>
                         </div>
                     </div>
-                    <p class="mb-1"><strong>Waktu Konfirmasi:</strong> {{ verif.tanggal_konfirmasi.strftime('%d-%m-%Y %H:%M:%S') }}</p>
-                    <p class="mb-1"><strong>Dikonfirmasi Oleh:</strong> {{ verif.petugas.nama }} ({{ verif.petugas.username }})</p>
-                    <p class="mb-3"><strong>Catatan Petugas:</strong> {{ verif.catatan_petugas or 'Tidak ada catatan tambahan.' }}</p>
+                    <div class="small">
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted">Waktu Konfirmasi:</span>
+                            <span class="text-dark">{{ verif.tanggal_konfirmasi.strftime('%d-%m-%Y %H:%M:%S') }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted">Disahkan Oleh:</span>
+                            <span class="text-dark fw-semibold">{{ verif.petugas.nama }} ({{ verif.petugas.username }})</span>
+                        </div>
+                        <div class="py-2">
+                            <span class="text-muted d-block mb-1">Catatan Pengesahan:</span>
+                            <div class="p-2.5 bg-light rounded-3 border text-dark">{{ verif.catatan_petugas or 'Tidak ada catatan tambahan.' }}</div>
+                        </div>
+                    </div>
                 {% elif current_user.is_warga %}
-                    <!-- PEMBERITAHUAN UNTUK WARGA (MENUNGGU KONFIRMASI) -->
-                    <div class="alert alert-info mb-3">
-                        <i class="bi bi-hourglass-split me-1"></i> <strong>Menunggu Pengesahan Petugas:</strong>
-                        Hasil evaluasi sistem di atas sedang menunggu konfirmasi resmi dan survei lanjutan dari petugas verifikasi bansos.
+                    <!-- PEMBERITAHUAN UNTUK WARGA -->
+                    <div class="alert alert-info mb-3 d-flex align-items-start gap-2">
+                        <i class="bi bi-hourglass-split fs-5 text-info mt-0.5"></i>
+                        <div>
+                            <strong>Menunggu Pengesahan Petugas:</strong>
+                            Hasil evaluasi sistem di atas sedang menunggu konfirmasi resmi dan survei lanjutan dari petugas verifikasi kelurahan.
+                        </div>
                     </div>
                     <p class="text-muted small mb-0">
-                        Anda akan mendapatkan notifikasi status setelah petugas memvalidasi berkas dan kriteria Anda secara faktual.
+                        Status akhir akan diperbarui setelah petugas memvalidasi berkas fisik dan kriteria faktual.
                     </p>
                 {% else %}
-                    <!-- FORM KONFIRMASI PERTAMA KALI OLEH PETUGAS -->
-                    <div class="alert alert-warning mb-3">
-                        <i class="bi bi-clock-history me-1"></i> <strong>Menunggu Konfirmasi:</strong> Hasil evaluasi otomatis rule engine belum disahkan oleh petugas verifikasi.
+                    <!-- FORM KONFIRMASI PETUGAS -->
+                    <div class="alert alert-warning mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history fs-5 text-warning"></i>
+                        <div>
+                            <strong>Menunggu Konfirmasi:</strong> Hasil evaluasi otomatis sistem belum disahkan secara permanen oleh petugas verifikasi.
+                        </div>
                     </div>
 
                     <form method="POST" action="{{ url_for('verifikasi.konfirmasi_verifikasi', id=verif.id) }}">
                         {{ form.hidden_tag() }}
 
-                        {{ render_field(form.status_final, class_="form-select", help_text="Perhatian: Konfirmasi hanya dapat dilakukan sekali dan tidak dapat dibatalkan.") }}
+                        {{ render_field(form.status_final, class_="form-select", help_text="Perhatian: Konfirmasi hanya dapat dilakukan sekali dan mengunci hasil evaluasi.") }}
 
-                        {{ render_field(form.catatan_petugas, rows="3", placeholder="Masukkan alasan atau catatan verifikasi lapangan...") }}
+                        {{ render_field(form.catatan_petugas, rows="3", placeholder="Masukkan catatan hasil survei lapangan atau alasan pertimbangan...") }}
 
-                        <button type="submit" class="btn btn-primary w-100 mt-2" onclick="return confirm('Apakah Anda yakin ingin mengonfirmasi keputusan ini secara permanen?');">
+                        <button type="submit" class="btn btn-primary w-100 py-2.5 mt-2 fw-semibold shadow-sm" onclick="return confirm('Apakah Anda yakin ingin mengonfirmasi keputusan ini secara permanen?');">
                             <i class="bi bi-check2-circle me-1"></i> Sahkan Keputusan Final
                         </button>
                     </form>
