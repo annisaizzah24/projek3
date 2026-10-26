@@ -25,6 +25,22 @@
             <div class="card-body p-4 p-md-5">
                 <form method="POST">
                     {{ form.hidden_tag() }}
+                    {{ form.hidden_tag() }}
+
+<!-- BARU: scan KK -->
+<div class="mb-4 p-3 border rounded-3 bg-light">
+    <label for="foto_kk" class="form-label fw-semibold">
+        <i class="bi bi-camera me-1 text-primary"></i>Scan Kartu Keluarga (opsional)
+    </label>
+    <input type="file" id="foto_kk" class="form-control mb-2" accept="image/png, image/jpeg">
+    <button type="button" id="btn-scan" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-magic me-1"></i> Scan & Isi Otomatis
+    </button>
+    <div id="status-ocr" class="form-text mt-2"></div>
+</div>
+
+<!-- LAMA: blok Nomor KK dst. -->
+<div class="mb-3">
 
                     <div class="mb-3">
                         <label for="{{ form.nomor_kk.id }}" class="form-label">
@@ -70,4 +86,48 @@
         </div>
     </div>
 </div>
+<script>
+document.getElementById("btn-scan").addEventListener("click", async () => {
+    const file = document.getElementById("foto_kk").files[0];
+    const status = document.getElementById("status-ocr");
+    const btn = document.getElementById("btn-scan");
+
+    if (!file) {
+        status.textContent = "Pilih foto KK dulu.";
+        return;
+    }
+
+    const fd = new FormData();
+    fd.append("foto_kk", file);
+
+    // Token CSRF dari form (hidden_tag), supaya tidak ditolak Flask-WTF
+    const csrf = document.querySelector('input[name="csrf_token"]');
+    if (csrf) fd.append("csrf_token", csrf.value);
+
+    status.textContent = "Memproses... (scan pertama bisa lama)";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch("{{ url_for('warga.ocr_kk_route') }}", {
+            method: "POST",
+            body: fd
+        });
+        const data = await res.json();
+
+        if (data.error) {
+            status.textContent = data.error;
+            return;
+        }
+
+        document.getElementById("nomor_kk").value = data.no_kk;
+        document.getElementById("kepala_keluarga").value = data.kepala_keluarga;
+        document.getElementById("alamat").value = data.alamat;
+        status.textContent = "Selesai. Mohon periksa kembali sebelum menyimpan.";
+    } catch (e) {
+        status.textContent = "Gagal memproses gambar.";
+    } finally {
+        btn.disabled = false;
+    }
+});
+</script>
 {% endblock %}

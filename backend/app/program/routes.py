@@ -123,3 +123,24 @@ def hapus_program(id):
         flash(f"Gagal menghapus program: {str(exc)}", "danger")
 
     return redirect(url_for("program.daftar_program"))
+
+import os
+from flask import request, jsonify
+from werkzeug.utils import secure_filename
+from app.ocr_kk import baca_kk
+
+UPLOAD_DIR = "uploads/temp"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@bp.route("/keluarga/ocr", methods=["POST"])
+def ocr_kk_route():
+    file = request.files.get("foto_kk")
+    if not file or not file.filename.lower().endswith((".jpg", ".jpeg", ".png")):
+        return jsonify({"error": "File harus berupa gambar JPG/PNG"}), 400
+
+    path = os.path.join(UPLOAD_DIR, secure_filename(file.filename))
+    file.save(path)
+    try:
+        return jsonify(baca_kk(path))
+    finally:
+        os.remove(path)

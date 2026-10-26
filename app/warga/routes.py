@@ -9,6 +9,10 @@ from app.extensions import db
 from app.forms import WargaForm, KeluargaForm
 from app.auth.routes import role_required
 from app.desil.routes import simpan_berkas_unggah
+import os
+from flask import request, jsonify
+from werkzeug.utils import secure_filename
+from app.ocr_kk import baca_kk
 
 
 # =============================================================================
@@ -419,3 +423,22 @@ def tambah_keluarga():
             flash(f"Gagal mendaftarkan keluarga: {str(exc)}", "danger")
 
     return render_template("warga/form_keluarga.html", form=form)
+
+
+UPLOAD_DIR = "uploads/temp"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@warga_bp.route("/keluarga/ocr", methods=["POST"])
+@login_required
+@role_required("admin", "petugas_verifikasi")
+def ocr_kk_route():
+    file = request.files.get("foto_kk")
+    if not file or not file.filename.lower().endswith((".jpg", ".jpeg", ".png")):
+        return jsonify({"error": "File harus berupa gambar JPG/PNG"}), 400
+
+    path = os.path.join(UPLOAD_DIR, secure_filename(file.filename))
+    file.save(path)
+    try:
+        return jsonify(baca_kk(path))
+    finally:
+        os.remove(path)  # data KK itu sensitif, jangan disimpan
