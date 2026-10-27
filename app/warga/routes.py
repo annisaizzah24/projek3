@@ -10,6 +10,7 @@ from app.forms import WargaForm, KeluargaForm
 from app.auth.routes import role_required
 from app.desil.routes import simpan_berkas_unggah
 import os
+import uuid
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
 from app.ocr_kk import baca_kk
@@ -436,9 +437,14 @@ def ocr_kk_route():
     if not file or not file.filename.lower().endswith((".jpg", ".jpeg", ".png")):
         return jsonify({"error": "File harus berupa gambar JPG/PNG"}), 400
 
-    path = os.path.join(UPLOAD_DIR, secure_filename(file.filename))
+    path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4().hex}.jpg")
     file.save(path)
     try:
         return jsonify(baca_kk(path))
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Gagal membaca gambar: {exc}"}), 500
     finally:
-        os.remove(path)  # data KK itu sensitif, jangan disimpan
+        if os.path.exists(path):
+            os.remove(path)

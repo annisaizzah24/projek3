@@ -119,12 +119,26 @@ document.getElementById("btn-scan").addEventListener("click", async () => {
             return;
         }
 
-        document.getElementById("nomor_kk").value = data.no_kk;
-        document.getElementById("kepala_keluarga").value = data.kepala_keluarga;
-        document.getElementById("alamat").value = data.alamat;
+        if (!data.no_kk && !data.kepala_keluarga && !data.alamat) {
+            status.textContent = "Teks KK tidak terbaca. Coba foto yang lebih jelas, rata, dan terang.";
+            return;
+        }
+
+        document.getElementById("nomor_kk").value = data.no_kk || "";
+        document.getElementById("kepala_keluarga").value = data.kepala_keluarga || "";
+        document.getElementById("alamat").value = data.alamat || "";
+
+        const kosong = [];
+        if (!data.no_kk) kosong.push("nomor KK");
+        if (!data.kepala_keluarga) kosong.push("nama kepala keluarga");
+        if (!data.alamat) kosong.push("alamat");
+
         status.textContent = "Selesai. Mohon periksa kembali sebelum menyimpan.";
+        if (kosong.length) status.textContent += " Belum terbaca: " + kosong.join(", ") + ".";
+        if (data.peringatan) status.textContent += " " + data.peringatan;
     } catch (e) {
-        status.textContent = "Gagal memproses gambar.";
+        console.error(e);
+        status.textContent = "Gagal memproses gambar: " + e.message;
     } finally {
         btn.disabled = false;
     }
