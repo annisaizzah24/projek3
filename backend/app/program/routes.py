@@ -132,6 +132,10 @@ from app.ocr_kk import baca_kk
 UPLOAD_DIR = "uploads/temp"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+OCR_TIMEOUT_SECONDS = int(os.environ.get("OCR_TIMEOUT_SECONDS", 60))
+_ocr_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ocr_worker_backend")
+
 @bp.route("/keluarga/ocr", methods=["POST"])
 def ocr_kk_route():
     file = request.files.get("foto_kk")
@@ -141,6 +145,20 @@ def ocr_kk_route():
     path = os.path.join(UPLOAD_DIR, secure_filename(file.filename))
     file.save(path)
     try:
-        return jsonify(baca_kk(path))
+        future = _ocr_executor.submit(baca_kk, path, timeout=OCR_TIMEOUT_SECONDS)
+        hasil = future.result(timeout=OCR_TIMEOUT_SECONDS)
+        return jsonify(hasil)
+    except FuturesTimeoutError:
+        return jsonify({
+            "error": f"Waktu pemrosesan OCR melebihi batas ({OCR_TIMEOUT_SECONDS} detik). Sistem dialihkan ke pengisian manual.",
+            "timeout": True,
+            "no_kk": "",
+            "kepala_keluarga": "",
+            "alamat": "",
+            "peringatan": "Pemrosesan OCR memakan waktu terlalu lama. Silakan masukkan data Kartu Keluarga secara manual."
+        }), 408
+    except Exception as exc:
+        return jsonify({"error": f"Gagal membaca gambar: {exc}"}), 500
     finally:
-        os.remove(path)
+        if os.path.exists(path):
+            os.remove(path)

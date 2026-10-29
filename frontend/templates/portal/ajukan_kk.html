@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Daftarkan KK Baru — Portal Warga SocioVault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="rounded-circle d-flex align-items-center justify-content-center"
+           style="width:52px;height:52px;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+        <i class="bi bi-file-earmark-plus-fill text-white fs-5"></i>
+      </div>
+      <div>
+        <h1 class="fw-bold mb-0 fs-4">Pengajuan Pendaftaran KK Baru</h1>
+        <p class="text-muted mb-0 small">Isi data di bawah, lalu kirim untuk diverifikasi Admin.</p>
+      </div>
+    </div>
+
+    <!-- Alert Info -->
+    <div class="alert alert-info border-0 rounded-3 mb-4 d-flex gap-2 align-items-start" role="alert">
+      <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+      <div>
+        <strong>Perhatian:</strong> Pengajuan Anda <strong>tidak langsung masuk</strong> ke data kependudukan.
+        Data akan masuk ke antrian verifikasi dan menunggu persetujuan petugas.
+        Anda bisa memantau status di halaman <a href="{{ url_for('portal.daftar_pengajuan_saya') }}" class="alert-link">Status Pengajuan Saya</a>.
+      </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+
+      <!-- Seksi 1: Data KK -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+          <span class="badge rounded-pill" style="background:#6366f1;">1</span>
+          <h6 class="fw-bold mb-0 text-dark">Data Kartu Keluarga</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.nomor_kk.label.text }}</label>
+              {{ form.nomor_kk(class="form-control" + (" is-invalid" if form.nomor_kk.errors else ""), placeholder="16 digit angka") }}
+              {% for e in form.nomor_kk.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.kepala_keluarga.label.text }}</label>
+              {{ form.kepala_keluarga(class="form-control" + (" is-invalid" if form.kepala_keluarga.errors else ""), placeholder="Nama kepala keluarga") }}
+              {% for e in form.kepala_keluarga.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">{{ form.alamat_kk.label.text }}</label>
+              {{ form.alamat_kk(class="form-control" + (" is-invalid" if form.alamat_kk.errors else ""), rows=2, placeholder="Alamat domisili keluarga sesuai KK") }}
+              {% for e in form.alamat_kk.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seksi 2: Data Diri Pemohon -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+          <span class="badge rounded-pill" style="background:#6366f1;">2</span>
+          <h6 class="fw-bold mb-0 text-dark">Data Diri Pemohon (Anggota Pertama)</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.nik.label.text }}</label>
+              {{ form.nik(class="form-control" + (" is-invalid" if form.nik.errors else ""), placeholder="16 digit NIK") }}
+              {% for e in form.nik.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.nama.label.text }}</label>
+              {{ form.nama(class="form-control" + (" is-invalid" if form.nama.errors else ""), placeholder="Nama lengkap sesuai KTP") }}
+              {% for e in form.nama.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.tanggal_lahir.label.text }}</label>
+              {{ form.tanggal_lahir(class="form-control" + (" is-invalid" if form.tanggal_lahir.errors else "")) }}
+              {% for e in form.tanggal_lahir.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.penghasilan.label.text }}</label>
+              <div class="input-group">
+                <span class="input-group-text">Rp</span>
+                {{ form.penghasilan(class="form-control" + (" is-invalid" if form.penghasilan.errors else ""), placeholder="0") }}
+                {% for e in form.penghasilan.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.jumlah_tanggungan.label.text }}</label>
+              {{ form.jumlah_tanggungan(class="form-control" + (" is-invalid" if form.jumlah_tanggungan.errors else "")) }}
+              {% for e in form.jumlah_tanggungan.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">{{ form.alamat.label.text }}</label>
+              {{ form.alamat(class="form-control" + (" is-invalid" if form.alamat.errors else ""), rows=2, placeholder="Alamat tinggal sesuai KTP") }}
+              {% for e in form.alamat.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seksi 3: Data Aset & Infrastruktur -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+          <span class="badge rounded-pill" style="background:#6366f1;">3</span>
+          <h6 class="fw-bold mb-0 text-dark">Data Aset & Infrastruktur Tempat Tinggal</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.status_rumah.label.text }}</label>
+              {{ form.status_rumah(class="form-select" + (" is-invalid" if form.status_rumah.errors else "")) }}
+              {% for e in form.status_rumah.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.luas_tanah.label.text }}</label>
+              <div class="input-group">
+                {{ form.luas_tanah(class="form-control" + (" is-invalid" if form.luas_tanah.errors else ""), placeholder="36") }}
+                <span class="input-group-text">m²</span>
+                {% for e in form.luas_tanah.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ form.daya_listrik.label.text }}</label>
+              {{ form.daya_listrik(class="form-select" + (" is-invalid" if form.daya_listrik.errors else "")) }}
+              {% for e in form.daya_listrik.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">{{ form.jenis_kendaraan.label.text }}</label>
+              {{ form.jenis_kendaraan(class="form-select" + (" is-invalid" if form.jenis_kendaraan.errors else "")) }}
+              {% for e in form.jenis_kendaraan.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-semibold small">{{ form.jumlah_kendaraan.label.text }}</label>
+              {{ form.jumlah_kendaraan(class="form-control" + (" is-invalid" if form.jumlah_kendaraan.errors else "")) }}
+              {% for e in form.jumlah_kendaraan.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seksi 4: Upload Foto -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2">
+          <span class="badge rounded-pill" style="background:#6366f1;">4</span>
+          <h6 class="fw-bold mb-0 text-dark">Dokumen Pendukung (Foto)</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">
+                {{ form.foto_rumah.label.text }}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 rounded-pill" style="font-size:0.65rem;">Wajib</span>
+              </label>
+              {{ form.foto_rumah(class="form-control" + (" is-invalid" if form.foto_rumah.errors else "")) }}
+              {% for e in form.foto_rumah.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              <div class="form-text">Format: JPG / PNG. Foto tampak depan rumah tinggal.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">
+                {{ form.foto_kendaraan.label.text }}
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle ms-1 rounded-pill" style="font-size:0.65rem;">Opsional</span>
+              </label>
+              {{ form.foto_kendaraan(class="form-control" + (" is-invalid" if form.foto_kendaraan.errors else "")) }}
+              {% for e in form.foto_kendaraan.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+              <div class="form-text">Foto bukti kepemilikan kendaraan (jika ada).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex gap-2 justify-content-end mb-5">
+        <a href="{{ url_for('portal.daftar_pengajuan_saya') }}" class="btn btn-outline-secondary rounded-pill px-4">
+          <i class="bi bi-arrow-left me-1"></i> Kembali
+        </a>
+        {{ form.submit(class="btn btn-primary rounded-pill px-5 fw-semibold", style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;") }}
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

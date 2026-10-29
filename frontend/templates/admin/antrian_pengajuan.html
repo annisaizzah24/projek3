@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Antrian Pengajuan Kependudukan — Admin SocioVault{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+  <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+       style="width:52px;height:52px;background:linear-gradient(135deg,#f59e0b,#ef4444);">
+    <i class="bi bi-person-lines-fill text-white fs-5"></i>
+  </div>
+  <div class="flex-grow-1">
+    <h1 class="fw-bold mb-0 fs-4">Antrian Pengajuan Kependudukan</h1>
+    <p class="text-muted mb-0 small">Verifikasi pengajuan KK baru dan penambahan anggota warga dari portal user.</p>
+  </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  {% for status, label, icon in [('menunggu', 'Menunggu', 'hourglass-split'), ('disetujui', 'Disetujui', 'check-circle-fill'), ('ditolak', 'Ditolak', 'x-circle-fill'), ('semua', 'Semua', 'list-ul')] %}
+  <a href="{{ url_for('warga.antrian_pengajuan_kependudukan', status=status) }}"
+     class="btn btn-sm rounded-pill px-3 fw-semibold
+            {% if status_filter == status %}
+              {% if status == 'menunggu' %}btn-warning text-dark
+              {% elif status == 'disetujui' %}btn-success
+              {% elif status == 'ditolak' %}btn-danger
+              {% else %}btn-dark{% endif %}
+            {% else %}btn-outline-secondary{% endif %}">
+    <i class="bi bi-{{ icon }} me-1"></i> {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if pengajuan_list %}
+<div class="row g-3">
+  {% for p in pengajuan_list %}
+  {% set badge_class, badge_label = p.status_badge %}
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom py-3 d-flex align-items-center gap-2 flex-wrap">
+        <span class="badge bg-{{ 'warning text-dark' if p.jenis_pengajuan == 'kk_baru' else 'info text-dark' }} rounded-pill">
+          <i class="bi bi-{% if p.jenis_pengajuan == 'kk_baru' %}file-earmark-plus{% else %}person-plus{% endif %} me-1"></i>
+          {{ p.jenis_label }}
+        </span>
+        <span class="badge bg-{{ badge_class }}-subtle text-{{ badge_class }} border border-{{ badge_class }}-subtle rounded-pill">
+          {{ badge_label }}
+        </span>
+        <span class="text-muted small ms-auto">
+          <i class="bi bi-calendar3 me-1"></i>
+          {{ p.tanggal_pengajuan.strftime('%d %b %Y, %H:%M') if p.tanggal_pengajuan else '-' }}
+        </span>
+      </div>
+
+      <div class="card-body p-4">
+        <div class="row g-3">
+          <!-- Detail Pemohon -->
+          <div class="col-md-6">
+            <h6 class="fw-semibold text-muted small text-uppercase mb-2">Pemohon</h6>
+            <div class="small">
+              <div><i class="bi bi-person-fill text-primary me-2"></i><strong>{{ p.pemohon.nama }}</strong></div>
+              <div class="text-muted"><i class="bi bi-at me-2"></i>{{ p.pemohon.username }}</div>
+              {% if p.pemohon.nik %}<div class="text-muted"><i class="bi bi-card-list me-2"></i>NIK: {{ p.pemohon.nik }}</div>{% endif %}
+            </div>
+          </div>
+
+          <!-- Detail KK (jika kk_baru) -->
+          {% if p.jenis_pengajuan == 'kk_baru' and p.data_kk %}
+          <div class="col-md-6">
+            <h6 class="fw-semibold text-muted small text-uppercase mb-2">Data KK yang Diajukan</h6>
+            <div class="small">
+              <div><i class="bi bi-card-list me-2"></i>No. KK: <strong>{{ p.data_kk.get('nomor_kk', '-') }}</strong></div>
+              <div><i class="bi bi-house me-2"></i>Kepala: {{ p.data_kk.get('kepala_keluarga', '-') }}</div>
+              <div class="text-muted"><i class="bi bi-geo-alt me-2"></i>{{ p.data_kk.get('alamat', '-') }}</div>
+            </div>
+          </div>
+          {% elif p.jenis_pengajuan == 'warga_baru' and p.keluarga_target %}
+          <div class="col-md-6">
+            <h6 class="fw-semibold text-muted small text-uppercase mb-2">KK Tujuan</h6>
+            <div class="small">
+              <div><i class="bi bi-card-list me-2"></i>No. KK: <strong>{{ p.keluarga_target.nomor_kk }}</strong></div>
+              <div><i class="bi bi-house me-2"></i>Kepala: {{ p.keluarga_target.kepala_keluarga }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Detail Warga yang Diajukan -->
+          {% if p.data_warga %}
+          <div class="col-12">
+            <h6 class="fw-semibold text-muted small text-uppercase mb-2">Data Warga yang Diajukan</h6>
+            <div class="row g-2 small">
+              <div class="col-md-3"><i class="bi bi-person me-1 text-primary"></i><strong>Nama:</strong> {{ p.data_warga.get('nama', '-') }}</div>
+              <div class="col-md-3"><i class="bi bi-card-text me-1 text-primary"></i><strong>NIK:</strong> {{ p.data_warga.get('nik', '-') }}</div>
+              <div class="col-md-3"><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Tgl Lahir:</strong> {{ p.data_warga.get('tanggal_lahir', '-') }}</div>
+              <div class="col-md-3"><i class="bi bi-cash-coin me-1 text-primary"></i><strong>Penghasilan:</strong> Rp {{ "{:,.0f}".format(p.data_warga.get('penghasilan', 0)|float) }}</div>
+              <div class="col-md-3"><i class="bi bi-people me-1 text-primary"></i><strong>Tanggungan:</strong> {{ p.data_warga.get('jumlah_tanggungan', 0) }}</div>
+              <div class="col-md-3"><i class="bi bi-house me-1 text-primary"></i><strong>Status Rmh:</strong> {{ p.data_warga.get('status_rumah', '-')|replace('_', ' ')|title }}</div>
+              <div class="col-md-3"><i class="bi bi-lightning me-1 text-primary"></i><strong>Daya Listrik:</strong> {{ p.data_warga.get('daya_listrik', '-') }} VA</div>
+              <div class="col-md-3"><i class="bi bi-car-front me-1 text-primary"></i><strong>Kendaraan:</strong> {{ p.data_warga.get('jenis_kendaraan', '-')|replace('_', ' ')|title }}</div>
+              {% if p.data_warga.get('alamat') %}
+              <div class="col-12"><i class="bi bi-geo-alt me-1 text-primary"></i><strong>Alamat:</strong> {{ p.data_warga.get('alamat', '-') }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Foto -->
+          {% if p.foto_rumah_path or p.foto_kendaraan_path %}
+          <div class="col-12">
+            <h6 class="fw-semibold text-muted small text-uppercase mb-2">Bukti Foto</h6>
+            <div class="d-flex gap-2 flex-wrap">
+              {% if p.foto_rumah_path %}
+              <a href="/{{ p.foto_rumah_path }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill">
+                <i class="bi bi-house-fill me-1"></i> Lihat Foto Rumah
+              </a>
+              {% endif %}
+              {% if p.foto_kendaraan_path %}
+              <a href="/{{ p.foto_kendaraan_path }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill">
+                <i class="bi bi-car-front-fill me-1"></i> Lihat Foto Kendaraan
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Catatan jika sudah diproses -->
+          {% if p.catatan_petugas and p.status != 'menunggu' %}
+          <div class="col-12">
+            <div class="alert alert-{{ badge_class }} border-0 py-2 px-3 mb-0 small rounded-3 d-flex gap-2 align-items-start">
+              <i class="bi bi-chat-left-text-fill flex-shrink-0 mt-1"></i>
+              <div>
+                <strong>Catatan Petugas:</strong> {{ p.catatan_petugas }}
+                {% if p.petugas %}<span class="ms-2 text-muted">— oleh {{ p.petugas.nama }}</span>{% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- ACTION BUTTONS (hanya jika masih menunggu) -->
+        {% if p.status == 'menunggu' %}
+        <div class="border-top mt-4 pt-3">
+          <div class="row g-2 align-items-end">
+            <!-- Setujui -->
+            <div class="col-md-6">
+              <form method="POST" action="{{ url_for('warga.setujui_pengajuan_kependudukan', id=p.id) }}"
+                    onsubmit="return confirm('Setujui pengajuan ini? Data warga akan langsung masuk ke sistem kependudukan.')">
+                <div class="mb-2">
+                  <label class="form-label fw-semibold small">Catatan (opsional saat menyetujui)</label>
+                  <input type="text" name="catatan_petugas" class="form-control form-control-sm" placeholder="Catatan petugas saat menyetujui...">
+                </div>
+                <button type="submit" class="btn btn-success btn-sm rounded-pill px-4 fw-semibold w-100">
+                  <i class="bi bi-check-circle-fill me-1"></i> Setujui & Masukkan ke Sistem
+                </button>
+              </form>
+            </div>
+
+            <!-- Tolak -->
+            <div class="col-md-6">
+              <form method="POST" action="{{ url_for('warga.tolak_pengajuan_kependudukan', id=p.id) }}"
+                    onsubmit="return this.querySelector('[name=catatan_penolakan]').value.trim() ? confirm('Tolak pengajuan ini?') : (alert('Catatan penolakan wajib diisi!'), false)">
+                <div class="mb-2">
+                  <label class="form-label fw-semibold small">
+                    Alasan Penolakan
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" name="catatan_penolakan" class="form-control form-control-sm" placeholder="Alasan penolakan (wajib diisi)..." required>
+                </div>
+                <button type="submit" class="btn btn-danger btn-sm rounded-pill px-4 fw-semibold w-100">
+                  <i class="bi bi-x-circle-fill me-1"></i> Tolak Pengajuan
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-5">
+  <div class="mb-3" style="font-size:3.5rem;opacity:0.35;">📋</div>
+  <h5 class="fw-semibold text-muted">
+    {% if status_filter == 'menunggu' %}Tidak ada pengajuan yang menunggu verifikasi
+    {% elif status_filter == 'disetujui' %}Belum ada pengajuan yang disetujui
+    {% elif status_filter == 'ditolak' %}Belum ada pengajuan yang ditolak
+    {% else %}Belum ada pengajuan kependudukan sama sekali{% endif %}
+  </h5>
+  <p class="text-muted small">Pengajuan dari warga akan muncul di sini setelah mereka mengirim melalui portal.</p>
+</div>
+{% endif %}
+{% endblock %}

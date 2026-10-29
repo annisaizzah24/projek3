@@ -88,57 +88,97 @@
 </div>
 <script>
 document.getElementById("btn-scan").addEventListener("click", async () => {
-    const file = document.getElementById("foto_kk").files[0];
+    const fileInput = document.getElementById("foto_kk");
+    const file = fileInput.files[0];
     const status = document.getElementById("status-ocr");
     const btn = document.getElementById("btn-scan");
 
     if (!file) {
-        status.textContent = "Pilih foto KK dulu.";
+        status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+        status.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Silakan pilih berkas foto KK terlebih dahulu.';
         return;
     }
 
     const fd = new FormData();
     fd.append("foto_kk", file);
 
-    // Token CSRF dari form (hidden_tag), supaya tidak ditolak Flask-WTF
     const csrf = document.querySelector('input[name="csrf_token"]');
     if (csrf) fd.append("csrf_token", csrf.value);
 
-    status.textContent = "Memproses... (scan pertama bisa lama)";
+    status.className = "alert alert-info py-2 px-3 mt-2 mb-0 small";
+    status.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Sedang memproses dokumen KK dan mendeteksi nomor KK header (maks. 1 menit)... Mohon tunggu.';
     btn.disabled = true;
+
+    // Timeout client-side 65 detik untuk memberi kelonggaran server menyelesaikan proses 60 detik
+    const controller = new AbortController();
+    const timeoutTimer = setTimeout(() => controller.abort(), 65000);
 
     try {
         const res = await fetch("{{ url_for('warga.ocr_kk_route') }}", {
             method: "POST",
-            body: fd
+            body: fd,
+            signal: controller.signal
         });
+        clearTimeout(timeoutTimer);
         const data = await res.json();
 
+        if (data.timeout) {
+            status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+            status.innerHTML = `<i class="bi bi-clock-history me-1 text-warning"></i> <strong>${data.error}</strong><br><span class="text-muted small">${data.peringatan || 'Silakan lengkapi nomor KK dan data keluarga secara manual di form bawah.'}</span>`;
+            document.getElementById("nomor_kk").focus();
+            return;
+        }
+
         if (data.error) {
-            status.textContent = data.error;
+            status.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
+            status.innerHTML = '<i class="bi bi-x-circle me-1"></i> ' + data.error;
             return;
         }
 
         if (!data.no_kk && !data.kepala_keluarga && !data.alamat) {
-            status.textContent = "Teks KK tidak terbaca. Coba foto yang lebih jelas, rata, dan terang.";
+            status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+            status.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> Teks KK tidak terbaca. Pastikan foto cukup terang, rata, dan jelas atau isi formulir secara manual.';
             return;
         }
 
+        // Isi form dengan hasil OCR yang terverifikasi
         document.getElementById("nomor_kk").value = data.no_kk || "";
         document.getElementById("kepala_keluarga").value = data.kepala_keluarga || "";
         document.getElementById("alamat").value = data.alamat || "";
 
-        const kosong = [];
-        if (!data.no_kk) kosong.push("nomor KK");
-        if (!data.kepala_keluarga) kosong.push("nama kepala keluarga");
-        if (!data.alamat) kosong.push("alamat");
-
-        status.textContent = "Selesai. Mohon periksa kembali sebelum menyimpan.";
-        if (kosong.length) status.textContent += " Belum terbaca: " + kosong.join(", ") + ".";
-        if (data.peringatan) status.textContent += " " + data.peringatan;
+        if (data.no_kk) {
+            status.className = "alert alert-success py-2 px-3 mt-2 mb-0 small";
+            const waktuInfo = data.duration_seconds ? ` (${data.duration_seconds}s)` : '';
+            let msg = `<i class="bi bi-check-circle-fill me-1 text-success"></i> <strong>Nomor KK Terdeteksi (${data.no_kk})</strong>${waktuInfo} dari header dokumen. Silakan periksa kembali sebelum menyimpan.`;
+            const belum = [];
+            if (!data.kepala_keluarga) belum.push("Nama Kepala Keluarga");
+            if (!data.alamat) belum.push("Alamat");
+            if (belum.length) {
+                msg += `<div class="mt-1 text-muted small"><i class="bi bi-info-circle me-1"></i>Catatan: ${belum.join(" dan ")} belum terbaca otomatis, silakan lengkapi manual.</div>`;
+            }
+            if (data.peringatan) {
+                msg += `<div class="mt-1 text-warning small">${data.peringatan}</div>`;
+            }
+            status.innerHTML = msg;
+        } else {
+            status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+            let msg = '<i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> <strong>Nomor KK belum teridentifikasi pasti dari header.</strong> Silakan masukkan 16 digit Nomor KK secara manual.';
+            if (data.peringatan) {
+                msg += `<div class="mt-1 text-muted small">${data.peringatan}</div>`;
+            }
+            status.innerHTML = msg;
+            document.getElementById("nomor_kk").focus();
+        }
     } catch (e) {
+        clearTimeout(timeoutTimer);
         console.error(e);
-        status.textContent = "Gagal memproses gambar: " + e.message;
+        status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+        if (e.name === "AbortError") {
+            status.innerHTML = '<i class="bi bi-clock-history me-1 text-warning"></i> <strong>Waktu pemrosesan OCR melebihi batas (Timeout 1 menit).</strong> Sistem dialihkan ke mode pengisian manual. Silakan isi form di bawah.';
+        } else {
+            status.innerHTML = '<i class="bi bi-exclamation-octagon me-1 text-danger"></i> Gagal memproses gambar: ' + e.message;
+        }
+        document.getElementById("nomor_kk").focus();
     } finally {
         btn.disabled = false;
     }

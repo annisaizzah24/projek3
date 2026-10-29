@@ -63,6 +63,27 @@
                     </a>
                 </li>
             </ul>
+            <div class="sidebar-heading">Pengajuan Kependudukan</div>
+            <ul class="nav flex-column mb-3">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'portal.ajukan_kk' %}active{% endif %}" href="{{ url_for('portal.ajukan_kk') }}">
+                        <i class="bi bi-file-earmark-plus-fill"></i>
+                        <span>Daftarkan KK Baru</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'portal.ajukan_warga' %}active{% endif %}" href="{{ url_for('portal.ajukan_warga') }}">
+                        <i class="bi bi-person-plus-fill"></i>
+                        <span>Tambah Anggota Warga</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'portal.daftar_pengajuan_saya' %}active{% endif %}" href="{{ url_for('portal.daftar_pengajuan_saya') }}">
+                        <i class="bi bi-list-check"></i>
+                        <span>Status Pengajuan Saya</span>
+                    </a>
+                </li>
+            </ul>
             {% else %}
             <div class="sidebar-heading">Menu Utama</div>
             <ul class="nav flex-column mb-2">
@@ -88,6 +109,15 @@
 
             <div class="sidebar-heading">Verifikasi & Sanggah</div>
             <ul class="nav flex-column mb-2">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'warga.antrian_pengajuan_kependudukan' %}active{% endif %}" href="{{ url_for('warga.antrian_pengajuan_kependudukan') }}">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span>Antrian Pengajuan Warga</span>
+                        {% if pending_kependudukan_count and pending_kependudukan_count > 0 %}
+                        <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.7rem;">{{ pending_kependudukan_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint and request.endpoint.startswith('desil.') %}active{% endif %}" href="{{ url_for('desil.daftar_pengajuan') }}">
                         <i class="bi bi-arrow-left-right"></i>

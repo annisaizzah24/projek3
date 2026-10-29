@@ -3,11 +3,28 @@
 \providecommand{\urlprefix}{URL }
 \providecommand{\doi}[1]{https://doi.org/#1}
 
+\bibitem{alatas2012targeting}
+Alatas, V., Banerjee, A., Hanna, R., Olken, B.A., Julia, M.: Targeting the
+  poor: Evidence from a field experiment in {Indonesia}. American Economic
+  Review  \textbf{102}(4),  1206--1240 (2012). \doi{10.1257/aer.102.4.1206}
+
 \bibitem{dswd2020guidelines}
 {Department of Social Welfare and Development (DSWD)}: Guidelines on the
   enhanced deduplication procedure amending memorandum circulars no. 14 and no.
   17, series of 2020. DSWD Memorandum Circular No. 18, Series of 2020, Quezon
   City, 22 Juli 2020 (2020)
+
+\bibitem{hanna2018universal}
+Hanna, R., Olken, B.A.: Universal basic incomes versus targeted transfers:
+  Anti-poverty programs in developing countries. Journal of Economic
+  Perspectives  \textbf{32}(4),  201--226 (2018). \doi{10.1257/jep.32.4.201}
+
+\bibitem{wei2022envisioning}
+Lopez, V., Picco, G., Vejsbjerg, I., Hoang, T.L., Hou, Y., Sbodio, M.L.,
+  Segrave-Daly, J., Moga, D., Swords, S., Wei, M., Carroll, E.: Envisioning a
+  human-{AI} collaborative system to transform policies into decision models.
+  arXiv preprint arXiv:2212.06882  (2022),
+  \url{https://arxiv.org/abs/2212.06882}
 
 \bibitem{openg2p_dedup}
 {OpenG2P}: Deduplication service documentation, versi 1.0.
@@ -22,7 +39,8 @@
 \bibitem{owino2020harmonising}
 Owino, B.: Harmonising data systems for cash transfer programming in
   emergencies in {Somalia}. Journal of International Humanitarian Action
-  \textbf{5}(1), ~11 (2020). \doi{10.1186/s41018-020-00077-1}
+  \textbf{5}(1), ~11 (2020). \doi{10.1186/s41018-020-00077-1},
+  \url{https://doi.org/10.1186/s41018-020-00077-1}
 
 \bibitem{flask_doc}
 {Pallets Projects}: Flask documentation, versi 3.0.
@@ -46,7 +64,7 @@ Owino, B.: Harmonising data systems for cash transfer programming in
 
 \bibitem{progress_software}
 {Progress Software}: Eligibility decisions at scale: How to stay fair,
-  consistent and audit ready. Artikel Industri, \url{https://www.progress.com/}
+  consistent and audit ready. White Paper, \url{https://www.progress.com/}
   (2023), diakses: 2024
 
 \bibitem{sqlalchemy_doc}
@@ -79,10 +97,5 @@ Sunny, A., et~al.: A neuro-symbolic framework for legal accountability in
 {U.S. General Accounting Office (GAO)}: Duplicate welfare payments in {New
   York} jurisdictions. Tech. Rep. HRD-78-133, U.S. General Accounting Office,
   Washington, D.C. (1978)
-
-\bibitem{wei2022envisioning}
-Wei, M., Smith, J., Johnson, R.: Envisioning a human-{AI} collaborative system
-  to transform policies into decision models. arXiv preprint arXiv:2212.06882
-  (2022), \url{https://arxiv.org/abs/2212.06882}
 
 \end{thebibliography}

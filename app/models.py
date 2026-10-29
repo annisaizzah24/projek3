@@ -803,3 +803,102 @@ class PengajuanDesil(db.Model):
 
     def __repr__(self):
         return f"<PengajuanDesil ID:{self.id} Warga:{self.id_warga} {self.desil_lama}->{self.desil_diajukan} ({self.status})>"
+
+
+# =============================================================================
+# 7. MODEL: PengajuanKependudukan (Antrian Pengajuan KK/Warga dari Sisi User)
+# =============================================================================
+class PengajuanKependudukan(db.Model):
+    """
+    Menyimpan pengajuan pendaftaran KK baru atau penambahan anggota warga baru
+    yang diajukan oleh user (warga). Data TIDAK langsung masuk ke tabel keluarga/warga
+    melainkan menunggu verifikasi dan persetujuan admin/petugas terlebih dahulu.
+    """
+    __tablename__ = "pengajuan_kependudukan"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Pemohon (user yang login dan mengajukan)
+    id_user = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    # Jenis pengajuan: mendaftarkan KK baru, atau menambah anggota ke KK yang sudah ada
+    jenis_pengajuan = Column(
+        Enum("kk_baru", "warga_baru", name="jenis_pengajuan_kependudukan_enum"),
+        nullable=False,
+        index=True,
+        comment="kk_baru = daftarkan KK baru beserta anggota; warga_baru = tambah anggota ke KK yang sudah ada"
+    )
+
+    # Status antrian
+    status = Column(
+        Enum("menunggu", "disetujui", "ditolak", name="status_pengajuan_kependudukan_enum"),
+        nullable=False,
+        default="menunggu",
+        index=True
+    )
+
+    # Data KK (diisi jika jenis_pengajuan == "kk_baru")
+    # Format JSON: {"nomor_kk": "...", "kepala_keluarga": "...", "alamat": "..."}
+    data_kk = Column(JSON, nullable=True, comment="Data Kartu Keluarga baru yang diajukan (JSON)")
+
+    # Data Warga (selalu diisi — berisi satu anggota keluarga yang didaftarkan)
+    # Format JSON: semua field Warga kecuali id_keluarga (ditentukan saat approve)
+    data_warga = Column(JSON, nullable=False, comment="Data warga yang diajukan (JSON)")
+
+    # Jika warga_baru: FK ke keluarga yang sudah ada (user memilih KK-nya sendiri)
+    id_keluarga_target = Column(
+        Integer,
+        ForeignKey("keluarga.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+        comment="Target KK jika jenis_pengajuan = warga_baru"
+    )
+
+    # Path file foto yang sudah diupload (disimpan di uploads/pengajuan/)
+    foto_rumah_path = Column(String(255), nullable=True)
+    foto_kendaraan_path = Column(String(255), nullable=True)
+
+    # Catatan dari admin/petugas (WAJIB diisi jika ditolak)
+    catatan_petugas = Column(Text, nullable=True, comment="Catatan persetujuan atau alasan penolakan")
+
+    # Petugas yang memproses pengajuan ini
+    id_petugas = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True
+    )
+
+    # Timestamps
+    tanggal_pengajuan = Column(DateTime, server_default=func.now(), index=True)
+    tanggal_verifikasi = Column(DateTime, nullable=True)
+
+    # Relationships
+    pemohon = relationship("User", foreign_keys=[id_user], backref="pengajuan_kependudukan_list")
+    petugas = relationship("User", foreign_keys=[id_petugas])
+    keluarga_target = relationship("Keluarga", foreign_keys=[id_keluarga_target])
+
+    __table_args__ = (
+        Index("idx_pengajuan_kependudukan_user", "id_user"),
+        Index("idx_pengajuan_kependudukan_status", "status"),
+        Index("idx_pengajuan_kependudukan_tanggal", "tanggal_pengajuan"),
+    )
+
+    @property
+    def jenis_label(self):
+        return "Pendaftaran KK Baru" if self.jenis_pengajuan == "kk_baru" else "Penambahan Anggota Warga"
+
+    @property
+    def status_badge(self):
+        mapping = {
+            "menunggu": ("warning", "Menunggu Verifikasi"),
+            "disetujui": ("success", "Disetujui"),
+            "ditolak": ("danger", "Ditolak"),
+        }
+        return mapping.get(self.status, ("secondary", self.status))
+
+    def __repr__(self):
+        return f"<PengajuanKependudukan ID:{self.id} User:{self.id_user} {self.jenis_pengajuan} ({self.status})>"

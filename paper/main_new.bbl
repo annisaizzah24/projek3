@@ -1,0 +1,99 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{alatas2012targeting}
+Alatas, V., Banerjee, A., Hanna, R., Olken, B.A., Julia, M.: Targeting the
+  poor: Evidence from a field experiment in {Indonesia}. American Economic
+  Review  \textbf{102}(4),  1206--1240 (2012). \doi{10.1257/aer.102.4.1206}
+
+\bibitem{dswd2020guidelines}
+{Department of Social Welfare and Development (DSWD)}: Guidelines on the
+  enhanced deduplication procedure amending memorandum circulars no. 14 and no.
+  17, series of 2020. DSWD Memorandum Circular No. 18, Series of 2020, Quezon
+  City, 22 Juli 2020 (2020)
+
+\bibitem{hanna2018universal}
+Hanna, R., Olken, B.A.: Universal basic incomes versus targeted transfers:
+  Anti-poverty programs in developing countries. Journal of Economic
+  Perspectives  \textbf{32}(4),  201--226 (2018). \doi{10.1257/jep.32.4.201}
+
+\bibitem{lopez2022envisioning}
+Lopez, K., Musabay, D., El~Kouhen, A., Gaaloul, W.: Envisioning a human-{AI}
+  collaborative system to transform policies into decision models. arXiv
+  preprint arXiv:2212.06882  (2022), \url{https://arxiv.org/abs/2212.06882}
+
+\bibitem{openg2p_dedup}
+{OpenG2P}: Deduplication service documentation, versi 1.0.
+  \url{https://github.com/newlogic/openg2p/blob/openg2p-ng-from-newlogic-g2p/docs/deduplicator/index.md}
+  (2024), diakses: 2024
+
+\bibitem{openimis2022algorithm}
+{openIMIS Initiative}: Advanced deduplication algorithm ({SR-053}), dokumen
+  kebutuhan sistem. Tech. rep., openIMIS Initiative (Januari 2022),
+  \url{https://openimis.atlassian.net/wiki/spaces/OP/pages/4129980470}
+
+\bibitem{owino2020harmonising}
+Owino, B.: Harmonising data systems for cash transfer programming in
+  emergencies in {Somalia}. Journal of International Humanitarian Action
+  \textbf{5}(1), ~11 (2020). \doi{10.1186/s41018-020-00077-1},
+  \url{https://doi.org/10.1186/s41018-020-00077-1}
+
+\bibitem{flask_doc}
+{Pallets Projects}: Flask documentation, versi 3.0.
+  \url{https://flask.palletsprojects.com/} (2024), diakses: 2024
+
+\bibitem{uu11_2009}
+{Presiden Republik Indonesia}: Undang-undang nomor 11 tahun 2009 tentang
+  kesejahteraan sosial. Lembaran Negara Republik Indonesia Tahun 2009 Nomor 12,
+  Tambahan Lembaran Negara Republik Indonesia Nomor 4967, Pasal 5 dan Pasal 34
+  (2009)
+
+\bibitem{perpres95_2018}
+{Presiden Republik Indonesia}: Peraturan presiden nomor 95 tahun 2018 tentang
+  sistem pemerintahan berbasis elektronik. Lembaran Negara Republik Indonesia
+  Tahun 2018 Nomor 182 (2018)
+
+\bibitem{uu27_2022}
+{Presiden Republik Indonesia}: Undang-undang nomor 27 tahun 2022 tentang
+  pelindungan data pribadi. Lembaran Negara Republik Indonesia Tahun 2022 Nomor
+  196, Tambahan Lembaran Negara Republik Indonesia Nomor 6820 (2022)
+
+\bibitem{progress_software}
+{Progress Software}: Eligibility decisions at scale: How to stay fair,
+  consistent and audit ready. White Paper, \url{https://www.progress.com/}
+  (2023), diakses: 2024
+
+\bibitem{sqlalchemy_doc}
+{SQLAlchemy}: Sqlalchemy documentation, versi 2.0.
+  \url{https://www.sqlalchemy.org/} (2024), diakses: 2024
+
+\bibitem{california1987match}
+{State of California, Department of Health Services}: All county welfare
+  directors letter no. 87-15: Name/birthdate match process. Sacramento, CA, 14
+  Mei 1987 (1987),
+  \url{https://www.dhcs.ca.gov/services/medical/eligibility/letters/Documents/c87-15.pdf}
+
+\bibitem{california1994letter}
+{State of California, Department of Health Services}: All county welfare
+  directors letter no. 94-27. Sacramento, CA, 15 Agustus 1994 (1994),
+  \url{https://www.dhcs.ca.gov/services/medical/eligibility/letters/Documents/c94-27.pdf}
+
+\bibitem{sunny2025neuro}
+Sunny, A.: A Neuro-Symbolic Framework for Accountability in Public-Sector {AI}.
+  Master's thesis, Department of Computer Science, University of Maryland
+  (2025),
+  \url{https://drum.lib.umd.edu/items/63f229d5-2f3e-45b3-bc14-28a48cad58a9}
+
+\bibitem{sunny2024legal}
+Sunny, A., et~al.: A neuro-symbolic framework for legal accountability in
+  public-sector {AI}. Tech. Rep. Tech. Rep., University of Maryland, College
+  Park, MD (2024), \url{https://dgi.umd.edu/node/15089}
+
+\bibitem{gao1978duplicate}
+{U.S. General Accounting Office (GAO)}: Duplicate welfare payments in {New
+  York} jurisdictions. Tech. Rep. HRD-78-133, U.S. General Accounting Office,
+  Washington, D.C. (1978)
+
+\end{thebibliography}
