@@ -20,11 +20,10 @@ Hanna, R., Olken, B.A.: Universal basic incomes versus targeted transfers:
   Perspectives  \textbf{32}(4),  201--226 (2018). \doi{10.1257/jep.32.4.201}
 
 \bibitem{wei2022envisioning}
-Lopez, V., Picco, G., Vejsbjerg, I., Hoang, T.L., Hou, Y., Sbodio, M.L.,
+\hl{Lopez, V., Picco, G., Vejsbjerg, I., Hoang, T.L., Hou, Y., Sbodio, M.L.,
   Segrave-Daly, J., Moga, D., Swords, S., Wei, M., Carroll, E.: Envisioning a
   human-{AI} collaborative system to transform policies into decision models.
-  arXiv preprint arXiv:2212.06882  (2022),
-  \url{https://arxiv.org/abs/2212.06882}
+  arXiv preprint arXiv:2212.06882  (2022), }\colorbox{yellow}{\url{https://arxiv.org/abs/2212.06882}}
 
 \bibitem{openg2p_dedup}
 {OpenG2P}: Deduplication service documentation, versi 1.0.

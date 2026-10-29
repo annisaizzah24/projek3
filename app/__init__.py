@@ -38,33 +38,25 @@ def create_app(config_name="default"):
     from app.program import program_bp
     from app.verifikasi import verifikasi_bp
     from app.desil import desil_bp
-    from app.portal import portal_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(warga_bp)
     app.register_blueprint(program_bp)
     app.register_blueprint(verifikasi_bp)
     app.register_blueprint(desil_bp)
-    app.register_blueprint(portal_bp)
 
     # Context Processor untuk variabel global template
     @app.context_processor
     def inject_globals():
-        from app.models import PengajuanDesil, PengajuanKependudukan, DESIL_INFO, get_desil_info
+        from app.models import PengajuanDesil, DESIL_INFO, get_desil_info
         pending_desil = 0
-        pending_kependudukan = 0
         if current_user.is_authenticated and not current_user.is_warga:
             try:
                 pending_desil = PengajuanDesil.query.filter_by(status="menunggu").count()
             except Exception:
                 pending_desil = 0
-            try:
-                pending_kependudukan = PengajuanKependudukan.query.filter_by(status="menunggu").count()
-            except Exception:
-                pending_kependudukan = 0
         return {
             "pending_desil_count": pending_desil,
-            "pending_kependudukan_count": pending_kependudukan,
             "DESIL_INFO": DESIL_INFO,
             "get_desil_info": get_desil_info
         }
