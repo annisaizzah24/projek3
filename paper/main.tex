@@ -34,11 +34,11 @@ The distribution of social assistance relies on consistent and traceable citizen
 
 Social assistance programs serve as an essential government mechanism to protect vulnerable populations and alleviate poverty~\cite{uu11_2009}. In developing countries, including Indonesia, targeting welfare recipients remains a persistent challenge characterized by exclusion errors (ineligible households receiving aid) and inclusion errors (impoverished households excluded from benefits)~\cite{alatas2012targeting,hanna2018universal}. Under the national Electronic-Based Government System framework (\textit{Sistem Pemerintahan Berbasis Elektronik} / SPBE)~\cite{perpres95_2018}, public service delivery must be transformed into integrated, objective, and auditable digital processes. Examining applicant data is therefore a vital operational step to ensure that eligibility recommendations are grounded in verifiable household parameters and predefined regulatory criteria rather than discretionary manual judgments.
 
-Several systemic risks must be addressed during automated eligibility assessments, including incomplete applicant records, duplicate claims across overlapping assistance programs, and determinations delivered without clear, verifiable explanations~\cite{gao1978duplicate,uu27_2022}. Incomplete records frequently cause automated engines to either silently drop applicants or issue erroneous rejections, whereas duplicate records distort budgetary allocation and violate fairness principles. Crucially, algorithmic decisions rendered without granular, criteria-level rationales hinder caseworkers and citizens from understanding why assistance was denied and prevent the timely correction of erroneous data. In public assistance administration, accountability requires that every decision can be audited against its underlying policy rules~\cite{sunny2025neuro,sunny2024legal}.
+Several systemic risks must be addressed during automated eligibility assessments, including incomplete applicant records, duplicate claims across overlapping assistance programs, and determinations delivered without clear, verifiable explanations~\cite{lindert2020sourcebook,busuioc2021accountable}. Incomplete records frequently cause automated engines to either silently drop applicants or issue erroneous rejections, whereas duplicate records distort budgetary allocation and violate fairness principles. Crucially, algorithmic decisions rendered without granular, criteria-level rationales hinder caseworkers and citizens from understanding why assistance was denied and prevent the timely correction of erroneous data. In public assistance administration, accountability requires that every decision can be audited against its underlying policy rules~\cite{sunny2025neuro}.
 
-A viable technological approach is rule-based eligibility evaluation, which formalizes policy regulations into explicit, deterministic criteria~\cite{wei2022envisioning}. To maintain operational integrity, rule engines must be supported by decision traceability---the ability to reconstruct the exact relationship between applicant input parameters, applied threshold criteria, and generated recommendations. Traceability requires maintaining comprehensive audit logs of all inspection steps, recording parameter versions, and systematically isolating incomplete or ambiguous cases for human inspection (\texttt{perlu\_ditinjau}) rather than prematurely rejecting vulnerable citizens without explicit evidentiary cause.
+A viable technological approach is rule-based eligibility evaluation, which formalizes policy regulations into explicit, deterministic criteria~\cite{lopez2022envisioning}. To maintain operational integrity, rule engines must be supported by decision traceability---the ability to reconstruct the exact relationship between applicant input parameters, applied threshold criteria, and generated recommendations. Traceability requires maintaining comprehensive audit logs of all inspection steps, recording parameter versions, and systematically isolating incomplete or ambiguous cases for human inspection (\texttt{perlu\_ditinjau}) rather than prematurely rejecting vulnerable citizens without explicit evidentiary cause~\cite{cobbe2021reviewable}.
 
-To investigate these operational requirements, this study evaluates rule compliance and decision traceability in a social assistance eligibility prototype called \textbf{Sociovault}. Specifically, this research addresses two primary Research Questions (RQs):
+To investigate these operational requirements, this study evaluates rule compliance and decision traceability in a social assistance eligibility prototype called \textbf{Sociovault}. As a concrete evaluation benchmark, the study configures a representative social assistance scheme (designated as \textbf{Program A}), modeled upon Indonesia's conditional cash assistance framework (\textit{Program Keluarga Harapan} / PKH). Eligibility under this benchmark is governed by four deterministic criteria: monthly income $\le$ Rp 2,000,000, dependent count $\ge$ 2, total asset value $\le$ Rp 15,000,000, and welfare decile $\le$ 3. These threshold parameters reflect statutory targeting guidelines established under Ministry of Social Affairs regulations (DTKS) and national poverty line indicators, which prioritize impoverished households in the bottom 30\% welfare percentiles (Deciles 1--3) supporting multiple family dependents~\cite{permensos3_2021}. Specifically, this research addresses two primary Research Questions (RQs):
 \begin{itemize}
     \item \textbf{RQ1:} \textit{To what extent does the prototype's multi-stage rule engine adhere to defined program eligibility criteria and boundary conditions without making premature automated decisions on incomplete or anomalous applications?}
     \item \textbf{RQ2:} \textit{Can the decision rationale generated by the system be traced and audited at the per-criterion level, and how does the prototype handle data correction and re-evaluation when applicant profiles are updated?}
@@ -50,13 +50,13 @@ The evaluation examines 60 synthetic cases across standard and edge-case profile
 
 \subsection{Rule-Based Eligibility and Transforming Policies into Decision Models}
 
-Research on social service eligibility automation emphasizes that eligibility rules are often embedded in complex policy documents, making them difficult to translate into executable logic. Wei et al. proposed a human-AI collaborative approach using natural language processing and knowledge graphs to transform eligibility policy documents into executable and interpretable decision models based on Decision Model and Notation (DMN) standards and Friendly Enough Expression Language (FEEL)~\cite{wei2022envisioning}. This approach separates regulatory policy definitions from core application logic. 
+Research on social service eligibility automation emphasizes that eligibility rules are often embedded in complex policy documents, making them difficult to translate into executable logic. Lopez et al. proposed a human-AI collaborative approach using natural language processing and knowledge graphs to transform eligibility policy documents into executable and interpretable decision models based on Decision Model and Notation (DMN) standards and Friendly Enough Expression Language (FEEL)~\cite{lopez2022envisioning}. This approach separates regulatory policy definitions from core application logic. 
 
 Industry systems similarly advocate decoupling business rules into auditable decision engines to ensure regulatory audit readiness~\cite{progress_software}. In contrast, the Sociovault prototype adopts a lightweight architecture tailored for municipal administration: criteria parameters are stored in relational database tables (\texttt{help\_program}) and evaluated by a deterministic rule engine (\texttt{run\_verify} / \texttt{jalankan\_verifikasi} in Python). Consequently, verifying that this embedded engine strictly adheres to coded specifications is essential.
 
 \subsection{Explainable and Auditable Decision Support for Public Services}
 
-The literature on automated public assistance systems increasingly prioritizes auditability over generic model interpretability. Sunny demonstrated that explanations produced by automated eligibility systems often diverge from underlying legal statutes, proposing a neuro-symbolic framework that ties generated explanations to formal requirements ontologies and satisfiability solvers~\cite{sunny2025neuro}. Related work reinforces that public-sector algorithmic explanations must directly cite governing criteria so that determinations remain contestable by administrative officers and applicants~\cite{sunny2024legal}.
+The literature on automated public assistance systems increasingly prioritizes auditability over generic model interpretability. Sunny demonstrated that explanations produced by automated eligibility systems often diverge from underlying legal statutes, proposing a neuro-symbolic framework that ties generated explanations to formal requirements ontologies and satisfiability solvers~\cite{sunny2025neuro}. Under this framework, public-sector algorithmic explanations must directly cite governing criteria so that determinations remain contestable by administrative officers and applicants~\cite{sunny2025neuro}.
 
 While those studies investigate high-level legal argumentation for programs such as CalFresh in the United States, Sociovault operates at the operational administrative tier: its output is a structured, per-criterion evaluation detailing applicant values, comparative operators ($\le, \ge$), program thresholds, and individual pass/fail statuses. The primary evaluation concern for Sociovault is therefore whether these structured details faithfully represent input data and applied rules.
 
@@ -70,7 +70,7 @@ In its current prototype version, Sociovault implements deterministic deduplicat
 
 \subsection{Identity Data Quality and Handling of Missing Data}
 
-Incomplete or erroneous identity data is a primary source of targeting misclassification in public welfare registries~\cite{gao1978duplicate}. Established best practices in public assistance decision systems emphasize that missing mandatory attributes should be treated as pending cases requiring investigation rather than being summarily categorized as ineligible, preventing the unfair exclusion of entitled citizens. Sociovault aligns with this principle by routing missing mandatory fields and zero-income anomalies to a provisional ``\texttt{perlu\_ditinjau}'' (needs review) status rather than generating an automated negative determination.
+Incomplete or erroneous identity data is a primary source of targeting misclassification in public welfare registries~\cite{lindert2020sourcebook}. Established best practices in public assistance decision systems emphasize that missing mandatory attributes should be treated as pending cases requiring investigation rather than being summarily categorized as ineligible, preventing the unfair exclusion of entitled citizens~\cite{lindert2020sourcebook,permensos3_2021}. Sociovault aligns with this principle by routing missing mandatory fields and zero-income anomalies to a provisional ``\texttt{perlu\_ditinjau}'' (needs review) status rather than generating an automated negative determination.
 
 \subsection{Sociovault's Position Relative to Previous Studies}
 \label{subsec:gap}
@@ -81,12 +81,13 @@ Table~\ref{tab:comparison} summarizes the focus of Sociovault in comparison to r
 \caption{Comparison of Sociovault with related literature and industry sources}
 \label{tab:comparison}
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{p{2.2cm}p{2.8cm}p{2.8cm}p{2.8cm}p{2.4cm}}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{2.0cm}p{2.4cm}p{2.4cm}p{2.4cm}p{2.3cm}}
 \hline
 \textbf{Source} & \textbf{Main Focus} & \textbf{Identity Matching} & \textbf{Decision Traceability} & \textbf{Measurable Testing} \\
 \hline
-Wei et al.~\cite{wei2022envisioning} & Policy-to-decision model & Not discussed & Objective framing & Qualitative modeling \\
+Lopez et al.~\cite{lopez2022envisioning} & Policy-to-decision model & Not discussed & Objective framing & Qualitative modeling \\
 Sunny~\cite{sunny2025neuro} & Explanation vs law & Not discussed & Legal basis ontology & Case evaluation \\
 GAO~\cite{gao1978duplicate} & Beneficiary deduplication & SSN match & Audit log inspection & Audit analysis \\
 California~\cite{california1987match,california1994letter} & Name \& DOB matching & Exact attribute matching & Procedural documentation & Administrative review \\
@@ -94,15 +95,14 @@ OpenG2P~\cite{openg2p_dedup} & Entity resolution & Fuzzy \& biometric matching &
 openIMIS~\cite{openimis2022algorithm} & Deduplication system & Fuzzy matching & Audit logging & Requirements spec \\
 Sociovault & Prototype eligibility verification & Unique NIK, single verification constraint & Per-criterion audit records, officer notes & Empirical synthetic tests (Section~4) \\
 \hline
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 
 \section{Methodology}
 
 \subsection{Assistance Program Criteria and Prototype Setup}
 
-The Sociovault prototype is implemented using Python with the Flask web framework~\cite{flask_doc} and SQLAlchemy ORM~\cite{sqlalchemy_doc}. The prototype database contains predefined assistance programs initialized via \texttt{seed.py}. For this evaluation, Program A was selected as the representative simulation benchmark. The criteria and thresholds configured for Program A are detailed in Table~\ref{tab:criteria}.
+The Sociovault prototype is implemented using Python with the Flask web framework~\cite{flask_doc} and SQLAlchemy ORM~\cite{sqlalchemy_doc}. The prototype database contains predefined assistance programs initialized via \texttt{seed.py}. For this evaluation, Program A (modeled after the PKH conditional assistance criteria) was selected as the representative simulation benchmark. The criteria and thresholds configured for Program A are detailed in Table~\ref{tab:criteria}.
 
 \begin{table}[htbp]
 \caption{Criteria of the benchmark assistance program (Program A)}
@@ -136,13 +136,12 @@ Eligibility determination follows a two-tier verification workflow: automated al
 System transitions and authorization boundaries are governed by a strict state matrix, as outlined in Table~\ref{tab:workflow_matrix}.
 
 \begin{table}[htbp]
-\caption{\protect\hl{Verification workflow rules and access control matrix}}
+\caption{Verification workflow rules and access control matrix}
 \label{tab:workflow_matrix}
 \centering
-\footnotesize
-\renewcommand{\arraystretch}{1.2}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{l p{2.6cm} l p{3.2cm} p{3.8cm}}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{1.8cm} p{2.2cm} p{1.6cm} p{2.5cm} p{3.2cm}}
 \hline
 \textbf{Initial State} & \textbf{Action} & \textbf{Allowed Role} & \textbf{System Outcome} & \textbf{Description} \\
 \hline
@@ -154,8 +153,7 @@ Inactive program & Execute verification & Anyone & Rejected (\texttt{ValueError}
 Pending final & Final confirmation & Admin, Officer & Committed final status & Mandatory audit notes \\
 Finalized & Re-confirm & Admin, Officer & Rejected & Single confirmation constraint \\
 \hline
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 
 \subsection{Rule Engine Execution and Rationale Logging}
@@ -264,60 +262,24 @@ To assess whether human officers can effectively interpret the criteria-level ra
 
 \subsection{Synthesis of Experimental Outputs}
 
-\begin{table}[htbp]
-\caption{Consolidated Output (1): Dataset specifications across evaluation suites}
-\label{tab:output1}
+To synthesize the empirical findings across the evaluation suites without redundant tabular summaries, Fig.~\ref{fig:evaluation_chart} visualizes the distribution of test cases ($N = 74$) alongside the observed compliance and error metrics. The deterministic rule engine consistently achieved 100\% label and rationale compliance across all evaluated deterministic conditions, producing zero false acceptances and zero premature automated rejections on review cases.
+
+\begin{figure}[htbp]
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{p{3.0cm}p{3.2cm}cp{4.7cm}}
-\hline
-\textbf{Test Suite} & \textbf{Evaluation Condition} & \textbf{Cases ($N$)} & \textbf{Ground-Truth Specification} \\
-\hline
-Test 1: Rule Compliance & Eligible (\texttt{layak}) & 20 & Meets all 4 criteria (Income $\le$ 2M, Dependents $\ge$ 2, Assets $\le$ 15M, Decile $\le$ 3). \\
-& Ineligible (\texttt{tidak\_layak}) & 20 & 15 single-criterion failures and 5 multi-criteria failures. \\
-& Needs Review (\texttt{perlu\_ditinjau}) & 20 & 10 cases with missing mandatory fields; 10 cases with Rp 0 income. \\
-\hline
-Test 2: Boundary \& Duplication & Boundary Value Analysis & 12 & 3 points per criterion (below, at, and above limit) across 4 criteria. \\
-& Duplicate \& Post-Edit Re-run & 2 & Second verification attempt before and after updating citizen income. \\
-\hline
-Test 3: Traceability Protocol & Officer Audit Protocol & 10 & Designed protocol; unexecuted due to synthetic evaluation scope. \\
-\hline
-\end{tabular}%
-}
-\end{table}
+\includegraphics[width=\textwidth]{evaluation_metrics_chart.png}
+\caption{Synthesis of empirical evaluation outputs: (a) Distribution of synthetic test cases across evaluation conditions ($N = 74$), and (b) observed deterministic rule compliance, auditability, and error metrics.}
+\label{fig:evaluation_chart}
+\end{figure}
+
+Table~\ref{tab:output3} summarizes representative qualitative failure, anomaly, and boundary cases captured during the evaluation, illustrating how the prototype handles edge-case conditions and isolates ambiguous profiles for human intervention. Furthermore, Table~\ref{tab:output4} outlines how these consolidated findings directly address the two core Research Questions.
 
 \begin{table}[htbp]
-\caption{\protect\hl{Consolidated Output (2): Evaluation metrics per experimental condition}}
-\label{tab:output2}
-\centering
-\footnotesize
-\renewcommand{\arraystretch}{1.15}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{l c c c c c p{4.6cm}}
-\hline
-\textbf{Condition} & \textbf{Cases ($N$)} & \textbf{Status Match} & \textbf{Reason Match} & \textbf{False Acc/Rej} & \textbf{Auto-Decided} & \textbf{Observed System Behavior} \\
-\hline
-Test 1: Eligible & 20 & 20 (100\%) & 20 (100\%) & 0 / 0 & --- & All 4 criteria logged as passed in \texttt{detail\_pengecekan}. \\
-Test 1: Ineligible & 20 & 20 (100\%) & 20 (100\%) & 0 / 0 & --- & Failed criteria explicitly identified and reported. \\
-Test 1: Missing Data & 10 & 10 (100\%) & 10 (100\%) & 0 / 0 & 0 (0\%) & Successfully routed to \texttt{perlu\_ditinjau} (missing fields). \\
-Test 1: Rp 0 Anomaly & 10 & 10 (100\%) & 10 (100\%) & 0 / 0 & 0 (0\%) & Successfully routed to \texttt{perlu\_ditinjau} (field survey flagged). \\
-Test 2: Boundary Values & 12 & 12 (100\%) & 12 (100\%) & 0 / 0 & --- & Operators ($\le$, $\ge$) correctly evaluated at exact limits. \\
-Test 2: Duplicate Run & 1 & Compliant & Compliant & --- & --- & Blocked via \texttt{AlreadyVerifiedError}; database intact. \\
-Test 2: Post-Correction & 1 & Blocked & --- & --- & --- & Re-run blocked by immutability check despite data edit. \\
-Test 3: Officer Traceability & 10 & Protocol Plan & Protocol Plan & --- & --- & Human trial unexecuted; evaluation protocol documented. \\
-\hline
-\end{tabular}%
-}
-\end{table}
-
-\begin{table}[htbp]
-\caption{\protect\hl{Consolidated Output (3): Representative failure, anomaly, and limitation cases}}
+\caption{Representative failure, anomaly, and limitation cases}
 \label{tab:output3}
 \centering
-\footnotesize
+\small
 \renewcommand{\arraystretch}{1.2}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{l p{3.2cm} p{2.8cm} p{2.4cm} p{4.2cm}}
+\begin{tabular}{l p{2.8cm} p{2.2cm} p{2.0cm} p{3.8cm}}
 \hline
 \textbf{Case ID} & \textbf{Input Condition} & \textbf{System Output} & \textbf{Issue Category} & \textbf{Root Cause and Traceability Analysis} \\
 \hline
@@ -327,16 +289,16 @@ TC-51 & Income Rp 0 with 3 dependents & \texttt{perlu\_ditinjau} & Economic Anom
 TC-DUP-02 & Profile income updated (2.5M $\to$ 1.5M), re-verified & Rejected (\texttt{AlreadyVerified}) & Architecture Boundary & Single-verification constraint per citizen--program lacks automated re-evaluation path. \\
 DEC-EST & Citizen lacks official decile (auto-calculated) & Decile estimated heuristically & Simulation Heuristic & Per-capita income/asset formula provides prototype estimates but lacks empirical policy validation. \\
 \hline
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 
 \begin{table}[htbp]
-\caption{Consolidated Output (4): Alignment between empirical results and research questions}
+\caption{Alignment between empirical results and research questions}
 \label{tab:output4}
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{p{3.2cm}p{4.2cm}p{5.4cm}}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{2.8cm}p{3.8cm}p{5.0cm}}
 \hline
 \textbf{Research Question} & \textbf{Empirical Evidence} & \textbf{Evaluation and Limitations} \\
 \hline
@@ -344,8 +306,7 @@ DEC-EST & Citizen lacks official decile (auto-calculated) & Decile estimated heu
 \hline
 \textbf{RQ2:} Traceability of rationales and post-correction re-evaluation & \texttt{detail\_pengecekan} logged 100\% of criteria rationales. In Test 2 (TC-DUP-02), re-verification was rejected after profile updates. & \textbf{Traceable rationale, decoupled re-evaluation:} Decisions are fully traceable at the per-criterion level. However, updating citizen profiles does not permit re-verification under the same program due to strict decision immutability. \\
 \hline
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 
 \section{Discussion: Citizen Decile Appeal Workflow and Re-Evaluation Bottlenecks}
@@ -364,21 +325,21 @@ The appeal workflow operates across three sequential steps:
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.86\textwidth]{decile_step1_dashboard.png}
+\includegraphics[width=0.72\textwidth]{decile_step1_dashboard.png}
 \caption{Citizen dashboard displaying registered welfare decile and appeal trigger.}
 \label{fig:decile_step1}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.86\textwidth]{decile_step2_form.png}
+\includegraphics[width=0.72\textwidth]{decile_step2_form.png}
 \caption{Decile appeal interface with comparative guidance and photographic evidence submission.}
 \label{fig:decile_step2}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.86\textwidth]{decile_step3_history.png}
+\includegraphics[width=0.72\textwidth]{decile_step3_history.png}
 \caption{Appeal audit tracking showing submitted socioeconomic evidence and officer review status.}
 \label{fig:decile_step3}
 \end{figure}

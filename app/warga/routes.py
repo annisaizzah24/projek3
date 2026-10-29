@@ -15,7 +15,7 @@ from flask import request, jsonify
 from werkzeug.utils import secure_filename
 from app.ocr_kk import baca_kk
 
-
+i 
 # =============================================================================
 # 1. DAFTAR WARGA: GET /warga (Search NIK/Nama & Filter Keluarga & Filter Desil)
 # =============================================================================
