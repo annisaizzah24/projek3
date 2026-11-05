@@ -32,13 +32,13 @@ The distribution of social assistance relies on consistent and traceable citizen
 
 \section{Introduction}
 
-Social assistance programs serve as an essential government mechanism to protect vulnerable populations and alleviate poverty~\cite{uu11_2009}. In developing countries, including Indonesia, targeting welfare recipients remains a persistent challenge characterized by exclusion errors (ineligible households receiving aid) and inclusion errors (impoverished households excluded from benefits)~\cite{alatas2012targeting,hanna2018universal}. Under the national Electronic-Based Government System framework (\textit{Sistem Pemerintahan Berbasis Elektronik} / SPBE)~\cite{perpres95_2018}, public service delivery must be transformed into integrated, objective, and auditable digital processes. Examining applicant data is therefore a vital operational step to ensure that eligibility recommendations are grounded in verifiable household parameters and predefined regulatory criteria rather than discretionary manual judgments.
+Social assistance programs serve as an essential government mechanism to protect vulnerable populations and alleviate poverty~\cite{oecd2019social}. In developing countries, including Indonesia, targeting welfare recipients remains a persistent challenge characterized by exclusion errors (ineligible households receiving aid) and inclusion errors (impoverished households excluded from benefits)~\cite{alatas2012targeting,hanna2018universal}. Under the national Electronic-Based Government System framework (\textit{Sistem Pemerintahan Berbasis Elektronik} / SPBE)~\cite{rachmawati2024policy}, public service delivery must be transformed into integrated, objective, and auditable digital processes. Examining applicant data is therefore a vital operational step to ensure that eligibility recommendations are grounded in verifiable household parameters and predefined regulatory criteria rather than discretionary manual judgments.
 
 Several systemic risks must be addressed during automated eligibility assessments, including incomplete applicant records, duplicate claims across overlapping assistance programs, and determinations delivered without clear, verifiable explanations~\cite{lindert2020sourcebook,busuioc2021accountable}. Incomplete records frequently cause automated engines to either silently drop applicants or issue erroneous rejections, whereas duplicate records distort budgetary allocation and violate fairness principles. Crucially, algorithmic decisions rendered without granular, criteria-level rationales hinder caseworkers and citizens from understanding why assistance was denied and prevent the timely correction of erroneous data. In public assistance administration, accountability requires that every decision can be audited against its underlying policy rules~\cite{sunny2025neuro}.
 
 A viable technological approach is rule-based eligibility evaluation, which formalizes policy regulations into explicit, deterministic criteria~\cite{lopez2022envisioning}. To maintain operational integrity, rule engines must be supported by decision traceability---the ability to reconstruct the exact relationship between applicant input parameters, applied threshold criteria, and generated recommendations. Traceability requires maintaining comprehensive audit logs of all inspection steps, recording parameter versions, and systematically isolating incomplete or ambiguous cases for human inspection (\texttt{perlu\_ditinjau}) rather than prematurely rejecting vulnerable citizens without explicit evidentiary cause~\cite{cobbe2021reviewable}.
 
-To investigate these operational requirements, this study evaluates rule compliance and decision traceability in a social assistance eligibility prototype called \textbf{Sociovault}. As a concrete evaluation benchmark, the study configures a representative social assistance scheme (designated as \textbf{Program A}), modeled upon Indonesia's conditional cash assistance framework (\textit{Program Keluarga Harapan} / PKH). Eligibility under this benchmark is governed by four deterministic criteria: monthly income $\le$ Rp 2,000,000, dependent count $\ge$ 2, total asset value $\le$ Rp 15,000,000, and welfare decile $\le$ 3. These threshold parameters reflect statutory targeting guidelines established under Ministry of Social Affairs regulations (DTKS) and national poverty line indicators, which prioritize impoverished households in the bottom 30\% welfare percentiles (Deciles 1--3) supporting multiple family dependents~\cite{permensos3_2021}. Specifically, this research addresses two primary Research Questions (RQs):
+To investigate these operational requirements, this study evaluates rule compliance and decision traceability in a social assistance eligibility prototype called \textbf{Sociovault}. As a concrete evaluation benchmark, the study configures a representative social assistance scheme (designated as \textbf{Program A}), modeled upon Indonesia's conditional cash assistance framework (\textit{Program Keluarga Harapan} / PKH). Eligibility under this benchmark is governed by four deterministic criteria: monthly income $\le$ Rp 2,000,000, dependent count $\ge$ 2, total asset value $\le$ Rp 15,000,000, and welfare decile $\le$ 3. These threshold parameters reflect targeting guidelines established under Indonesian social registry frameworks (DTKS) and national poverty line indicators, which prioritize impoverished households in the bottom 30\% welfare percentiles (Deciles 1--3) supporting multiple family dependents~\cite{hadiwidjaja2022improving}. Specifically, this research addresses two primary Research Questions (RQs):
 \begin{itemize}
     \item \textbf{RQ1:} \textit{To what extent does the prototype's multi-stage rule engine adhere to defined program eligibility criteria and boundary conditions without making premature automated decisions on incomplete or anomalous applications?}
     \item \textbf{RQ2:} \textit{Can the decision rationale generated by the system be traced and audited at the per-criterion level, and how does the prototype handle data correction and re-evaluation when applicant profiles are updated?}
@@ -62,15 +62,15 @@ While those studies investigate high-level legal argumentation for programs such
 
 \subsection{Deduplication and Recipient Identity Matching}
 
-Duplicate benefit disbursement has long presented an administrative vulnerability in public welfare. A landmark U.S. General Accounting Office (GAO) audit revealed that cross-jurisdictional duplicate welfare payments persisted primarily due to missing or unverified identification numbers and fragmented data formats~\cite{gao1978duplicate}. Historically, social service agencies implemented rule-based cross-matching: early state circulars employed exact name and birthdate matching to identify potential duplicate recipients for human case review~\cite{california1987match,california1994letter}.
+Duplicate benefit disbursement has long presented an administrative vulnerability in public welfare. Programmatic evaluations across cash transfer programs demonstrate that administrative fragmentation and unverified identity records frequently result in duplicate welfare allocations and fiscal losses~\cite{davis2016evidence}. Historically, social service agencies implemented rule-based cross-matching: early state circulars employed exact name and birthdate matching to identify potential duplicate recipients for human case review~\cite{california1987match,california1994letter}.
 
-Modern social protection architectures increasingly deploy automated entity resolution systems. The OpenG2P deduplication framework integrates multi-attribute fuzzy matching with biometric verifications to resolve duplicates across disparate identity sources~\cite{openg2p_dedup}. The openIMIS initiative designed dedicated deduplication modules incorporating probabilistic similarity algorithms and persistent audit logs~\cite{openimis2022algorithm}. Similar multi-tiered deduplication protocols have been codified in regional social welfare guidelines~\cite{dswd2020guidelines}, while system harmonization remains critical for humanitarian cash transfer programs~\cite{owino2020harmonising}.
+Modern social protection architectures increasingly deploy automated entity resolution systems. The OpenG2P deduplication framework integrates multi-attribute fuzzy matching with biometric verifications to resolve duplicates across disparate identity sources~\cite{openg2p_dedup}. The openIMIS initiative designed dedicated deduplication modules incorporating probabilistic similarity algorithms and persistent audit logs~\cite{openimis2022algorithm}. Similar multi-tiered deduplication and record linkage architectures have been deployed across large-scale social welfare registries~\cite{pita2020cidacs}, while system harmonization remains critical for humanitarian cash transfer programs~\cite{owino2020harmonising}.
 
 In its current prototype version, Sociovault implements deterministic deduplication through unique constraints on National Identity Numbers (NIK) and unique citizen--program verification pairs. Rather than conducting probabilistic entity resolution, Sociovault enforces strict single-entry registration, making evaluation of its boundary behavior and error rejection critical.
 
 \subsection{Identity Data Quality and Handling of Missing Data}
 
-Incomplete or erroneous identity data is a primary source of targeting misclassification in public welfare registries~\cite{lindert2020sourcebook}. Established best practices in public assistance decision systems emphasize that missing mandatory attributes should be treated as pending cases requiring investigation rather than being summarily categorized as ineligible, preventing the unfair exclusion of entitled citizens~\cite{lindert2020sourcebook,permensos3_2021}. Sociovault aligns with this principle by routing missing mandatory fields and zero-income anomalies to a provisional ``\texttt{perlu\_ditinjau}'' (needs review) status rather than generating an automated negative determination.
+Incomplete or erroneous identity data is a primary source of targeting misclassification in public welfare registries~\cite{lindert2020sourcebook}. Established best practices in public assistance decision systems emphasize that missing mandatory attributes should be treated as pending cases requiring investigation rather than being summarily categorized as ineligible, preventing the unfair exclusion of entitled citizens~\cite{lindert2020sourcebook,hadiwidjaja2022improving}. Sociovault aligns with this principle by routing missing mandatory fields and zero-income anomalies to a provisional ``\texttt{perlu\_ditinjau}'' (needs review) status rather than generating an automated negative determination.
 
 \subsection{Sociovault's Position Relative to Previous Studies}
 \label{subsec:gap}
@@ -89,7 +89,7 @@ Table~\ref{tab:comparison} summarizes the focus of Sociovault in comparison to r
 \hline
 Lopez et al.~\cite{lopez2022envisioning} & Policy-to-decision model & Not discussed & Objective framing & Qualitative modeling \\
 Sunny~\cite{sunny2025neuro} & Explanation vs law & Not discussed & Legal basis ontology & Case evaluation \\
-GAO~\cite{gao1978duplicate} & Beneficiary deduplication & SSN match & Audit log inspection & Audit analysis \\
+Davis et al.~\cite{davis2016evidence} & Transfer deduplication & Recipient matching & Audit log inspection & Programmatic review \\
 California~\cite{california1987match,california1994letter} & Name \& DOB matching & Exact attribute matching & Procedural documentation & Administrative review \\
 OpenG2P~\cite{openg2p_dedup} & Entity resolution & Fuzzy \& biometric matching & Not discussed & Platform specification \\
 openIMIS~\cite{openimis2022algorithm} & Deduplication system & Fuzzy matching & Audit logging & Requirements spec \\
@@ -277,9 +277,9 @@ Table~\ref{tab:output3} summarizes representative qualitative failure, anomaly, 
 \caption{Representative failure, anomaly, and limitation cases}
 \label{tab:output3}
 \centering
-\small
+\resizebox{\textwidth}{!}{%
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{l p{2.8cm} p{2.2cm} p{2.0cm} p{3.8cm}}
+\begin{tabular}{lp{3.0cm}p{3.2cm}p{2.6cm}p{5.2cm}}
 \hline
 \textbf{Case ID} & \textbf{Input Condition} & \textbf{System Output} & \textbf{Issue Category} & \textbf{Root Cause and Traceability Analysis} \\
 \hline
@@ -289,7 +289,8 @@ TC-51 & Income Rp 0 with 3 dependents & \texttt{perlu\_ditinjau} & Economic Anom
 TC-DUP-02 & Profile income updated (2.5M $\to$ 1.5M), re-verified & Rejected (\texttt{AlreadyVerified}) & Architecture Boundary & Single-verification constraint per citizen--program lacks automated re-evaluation path. \\
 DEC-EST & Citizen lacks official decile (auto-calculated) & Decile estimated heuristically & Simulation Heuristic & Per-capita income/asset formula provides prototype estimates but lacks empirical policy validation. \\
 \hline
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{table}[htbp]

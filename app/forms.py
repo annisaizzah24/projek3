@@ -32,6 +32,13 @@ class KeluargaForm(FlaskForm):
             Regexp(r"^\d{16}$", message="Nomor KK harus tepat 16 digit angka numerik.")
         ]
     )
+    nik_kepala_keluarga = StringField(
+        "NIK Kepala Keluarga",
+        validators=[
+            Optional(),
+            Regexp(r"^\d{16}$", message="NIK Kepala Keluarga harus tepat 16 digit angka numerik.")
+        ]
+    )
     kepala_keluarga = StringField(
         "Nama Kepala Keluarga",
         validators=[DataRequired(message="Nama kepala keluarga wajib diisi.")]
@@ -46,6 +53,12 @@ class KeluargaForm(FlaskForm):
         existing = Keluarga.query.filter_by(nomor_kk=field.data.strip()).first()
         if existing:
             raise ValidationError(f"Nomor KK '{field.data}' sudah terdaftar dalam sistem.")
+
+    def validate_nik_kepala_keluarga(self, field):
+        if field.data and field.data.strip():
+            existing = Warga.query.filter_by(nik=field.data.strip()).first()
+            if existing:
+                raise ValidationError(f"NIK '{field.data}' sudah terdaftar sebagai warga atas nama '{existing.nama}'.")
 
 
 class WargaForm(FlaskForm):

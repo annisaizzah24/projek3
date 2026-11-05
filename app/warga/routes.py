@@ -15,7 +15,6 @@ from flask import request, jsonify
 from werkzeug.utils import secure_filename
 from app.ocr_kk import baca_kk
 
-i 
 # =============================================================================
 # 1. DAFTAR WARGA: GET /warga (Search NIK/Nama & Filter Keluarga & Filter Desil)
 # =============================================================================
@@ -413,6 +412,11 @@ def tambah_keluarga():
                 alamat=form.alamat.data.strip()
             )
             db.session.add(keluarga_baru)
+            db.session.flush()
+            nik_val = form.nik_kepala_keluarga.data.strip() if form.nik_kepala_keluarga.data else ''
+            if nik_val:
+                warga_kepala = Warga(nik=nik_val, id_keluarga=keluarga_baru.id, nama=keluarga_baru.kepala_keluarga, alamat=keluarga_baru.alamat, tanggal_lahir=datetime.date(1980, 1, 1), penghasilan=0, jumlah_tanggungan=0, nilai_aset=0)
+                db.session.add(warga_kepala)
             db.session.commit()
             flash(f"Kartu Keluarga No. {keluarga_baru.nomor_kk} ({keluarga_baru.kepala_keluarga}) berhasil didaftarkan.", "success")
             return redirect(url_for("warga.daftar_warga"))

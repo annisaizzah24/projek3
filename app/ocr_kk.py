@@ -468,6 +468,43 @@ def cari_alamat(items, lines, table_y):
     return ""
 
 
+def cari_nik_kepala_keluarga(items, lines, table_y, no_kk=None):
+    """
+    Mencari NIK Kepala Keluarga (16 digit) dari tabel Kartu Keluarga.
+    Karakteristik KK Indonesia:
+    1. Berada di tabel data keluarga (di bawah table_y).
+    2. Baris pertama tabel keluarga (No 1) selalu memuat data Kepala Keluarga.
+    3. NIK harus 16 digit numerik dengan kode provinsi sah dan BUKAN Nomor KK.
+    """
+    kandidat = []
+
+    # Strategi 1: Cari dari baris-baris terstruktur di tabel anggota keluarga
+    for line in lines:
+        if re.search(r'\b(?:nik|nama\s*lengkap|tempat\s*lahir|golongan\s*darah)\b', line, re.IGNORECASE):
+            continue
+        tokens = re.split(r'[\s|/]+', line)
+        for t in tokens:
+            c = clean_digits(t)
+            if len(c) == 16 and valid_no_kk(c) and c != no_kk:
+                kandidat.append(c)
+                break  # Satu NIK per baris sudah cukup
+        if kandidat:
+            # Ambil NIK dari baris data keluarga pertama (Kepala Keluarga)
+            return kandidat[0]
+
+    # Strategi 2: Bounding box di bawah batas tabel, diurutkan dari posisi Y teratas
+    table_items = [it for it in items if it['yc'] >= table_y]
+    table_items.sort(key=lambda x: (x['yc'], x['xmin']))
+    for it in table_items:
+        if re.search(r'\bnik\b', it['text'], re.IGNORECASE):
+            continue
+        c = clean_digits(it['text'])
+        if len(c) == 16 and valid_no_kk(c) and c != no_kk:
+            return c
+
+    return ""
+
+
 def baca_kk(path, timeout=60):
     """
     Fungsi utama OCR untuk memindai dokumen Kartu Keluarga dengan proteksi timeout:
@@ -528,10 +565,11 @@ def baca_kk(path, timeout=60):
     no_kk, peringatan = cari_nomor_kk(items, reader, enhanced_gray, table_y, img_h, img_w, deadline=deadline)
     kepala_keluarga = cari_kepala_keluarga(items, lines, table_y)
     alamat = cari_alamat(items, lines, table_y)
+    nik_kepala = cari_nik_kepala_keluarga(items, lines, table_y, no_kk=no_kk)
 
-    # 5. Tahap 2: Fallback ke pemindaian seluruh gambar hanya jika No KK belum ditemukan
-    # dan masih ada sisa waktu sebelum deadline timeout
-    if not no_kk and (time.time() < deadline - 5):
+    # 5. Tahap 2: Fallback ke pemindaian seluruh gambar jika No KK belum ditemukan
+    # atau NIK kepala keluarga belum tertangkap di header crop
+    if (not no_kk or not nik_kepala) and (time.time() < deadline - 5):
         full_results = reader.readtext(enhanced_gray, detail=1)
         items_full = []
         for bbox, text, conf in full_results:
@@ -557,16 +595,20 @@ def baca_kk(path, timeout=60):
             })
         lines_full = susun_baris_dari_items(items_full)
         table_y_full = cari_batas_tabel(items_full, img_h)
-        no_kk, peringatan = cari_nomor_kk(items_full, reader, enhanced_gray, table_y_full, img_h, img_w, deadline=deadline)
+        if not no_kk:
+            no_kk, peringatan = cari_nomor_kk(items_full, reader, enhanced_gray, table_y_full, img_h, img_w, deadline=deadline)
         if not kepala_keluarga:
             kepala_keluarga = cari_kepala_keluarga(items_full, lines_full, table_y_full)
         if not alamat:
             alamat = cari_alamat(items_full, lines_full, table_y_full)
+        if not nik_kepala:
+            nik_kepala = cari_nik_kepala_keluarga(items_full, lines_full, table_y_full, no_kk=no_kk)
         lines = lines_full
 
     elapsed = time.time() - start_time
     return {
         "no_kk": no_kk,
+        "nik": nik_kepala,
         "kepala_keluarga": kepala_keluarga,
         "alamat": alamat,
         "peringatan": peringatan,

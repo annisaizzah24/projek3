@@ -56,6 +56,19 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="{{ form.nik_kepala_keluarga.id }}" class="form-label">
+                            <i class="bi bi-person-badge me-1 text-primary"></i>{{ form.nik_kepala_keluarga.label.text }}
+                        </label>
+                        {{ form.nik_kepala_keluarga(class_="form-control font-monospace" + (" is-invalid" if form.nik_kepala_keluarga.errors else ""), placeholder="16 digit NIK Kepala Keluarga (otomatis terisi dari scan)", maxlength="16") }}
+                        {% for error in form.nik_kepala_keluarga.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text mt-1 text-muted">
+                            <i class="bi bi-info-circle me-1"></i>Opsional / otomatis terisi dari scan baris pertama KK.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="{{ form.kepala_keluarga.id }}" class="form-label">
                             <i class="bi bi-person me-1 text-primary"></i>{{ form.kepala_keluarga.label.text }} <span class="text-danger fw-bold">*</span>
                         </label>
@@ -143,6 +156,9 @@ document.getElementById("btn-scan").addEventListener("click", async () => {
 
         // Isi form dengan hasil OCR yang terverifikasi
         document.getElementById("nomor_kk").value = data.no_kk || "";
+        if (document.getElementById("nik_kepala_keluarga")) {
+            document.getElementById("nik_kepala_keluarga").value = data.nik || "";
+        }
         document.getElementById("kepala_keluarga").value = data.kepala_keluarga || "";
         document.getElementById("alamat").value = data.alamat || "";
 
@@ -151,6 +167,7 @@ document.getElementById("btn-scan").addEventListener("click", async () => {
             const waktuInfo = data.duration_seconds ? ` (${data.duration_seconds}s)` : '';
             let msg = `<i class="bi bi-check-circle-fill me-1 text-success"></i> <strong>Nomor KK Terdeteksi (${data.no_kk})</strong>${waktuInfo} dari header dokumen. Silakan periksa kembali sebelum menyimpan.`;
             const belum = [];
+            if (!data.nik) belum.push("NIK Kepala Keluarga");
             if (!data.kepala_keluarga) belum.push("Nama Kepala Keluarga");
             if (!data.alamat) belum.push("Alamat");
             if (belum.length) {
