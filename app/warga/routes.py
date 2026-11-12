@@ -1,18 +1,19 @@
 import datetime
+import json
+import os
+import re
+import uuid
 from decimal import Decimal
-from flask import render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask import render_template, request, redirect, url_for, flash, jsonify, abort, send_file, current_app
+from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
+from werkzeug.utils import secure_filename
 from app.warga import warga_bp
 from app.models import Warga, Keluarga, Verifikasi, DESIL_INFO, get_desil_info
 from app.extensions import db
 from app.forms import WargaForm, KeluargaForm
 from app.auth.routes import role_required
 from app.desil.routes import simpan_berkas_unggah
-import os
-import uuid
-from flask import request, jsonify
-from werkzeug.utils import secure_filename
 from app.ocr_kk import baca_kk
 
 # =============================================================================
@@ -51,6 +52,23 @@ def daftar_warga():
     pagination = query.order_by(Warga.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     daftar_keluarga = Keluarga.query.order_by(Keluarga.nomor_kk.asc()).all()
 
+    # Daftar dokumen KK yang diunggah warga (prioritaskan Menunggu Verifikasi & Perlu Perbaikan)
+    dokumen_kk_list = Keluarga.query.filter(
+        db.or_(
+            Keluarga.dokumen_kk.isnot(None),
+            Keluarga.status_dokumen != "Belum Diunggah"
+        )
+    ).order_by(
+        db.case(
+            (Keluarga.status_dokumen == "Menunggu Verifikasi", 1),
+            (Keluarga.status_dokumen == "Perlu Perbaikan", 2),
+            (Keluarga.status_dokumen == "Terverifikasi", 3),
+            else_=4
+        ),
+        Keluarga.updated_at.desc()
+    ).all()
+    pending_kk_count = sum(1 for k in dokumen_kk_list if k.status_dokumen == "Menunggu Verifikasi")
+
     if request.headers.get("Accept") == "application/json" or request.args.get("format") == "json":
         items = [{
             "id": w.id,
@@ -79,6 +97,8 @@ def daftar_warga():
         "warga/index.html",
         pagination=pagination,
         daftar_keluarga=daftar_keluarga,
+        dokumen_kk_list=dokumen_kk_list,
+        pending_kk_count=pending_kk_count,
         search=search,
         selected_keluarga=id_keluarga,
         desil_filter=desil_filter,
@@ -396,74 +416,331 @@ def hapus_warga(id):
 
 
 # =============================================================================
-# 5. TAMBAH KELUARGA: GET / POST /keluarga/tambah (Flask-WTF)
+# 5. UNGGAH, OCR, & VERIFIKASI DOKUMEN KARTU KELUARGA (SELF-SERVICE WARGA)
 # =============================================================================
-@warga_bp.route("/keluarga/tambah", methods=["GET", "POST"])
-@login_required
-@role_required("admin", "petugas_verifikasi")
-def tambah_keluarga():
-    form = KeluargaForm()
-
-    if form.validate_on_submit():
-        try:
-            keluarga_baru = Keluarga(
-                nomor_kk=form.nomor_kk.data.strip(),
-                kepala_keluarga=form.kepala_keluarga.data.strip(),
-                alamat=form.alamat.data.strip()
-            )
-            db.session.add(keluarga_baru)
-            db.session.flush()
-            nik_val = form.nik_kepala_keluarga.data.strip() if form.nik_kepala_keluarga.data else ''
-            if nik_val:
-                warga_kepala = Warga(nik=nik_val, id_keluarga=keluarga_baru.id, nama=keluarga_baru.kepala_keluarga, alamat=keluarga_baru.alamat, tanggal_lahir=datetime.date(1980, 1, 1), penghasilan=0, jumlah_tanggungan=0, nilai_aset=0)
-                db.session.add(warga_kepala)
-            db.session.commit()
-            flash(f"Kartu Keluarga No. {keluarga_baru.nomor_kk} ({keluarga_baru.kepala_keluarga}) berhasil didaftarkan.", "success")
-            return redirect(url_for("warga.daftar_warga"))
-        except IntegrityError:
-            db.session.rollback()
-            form.nomor_kk.errors.append("Nomor KK sudah terdaftar dalam database.")
-        except Exception as exc:
-            db.session.rollback()
-            flash(f"Gagal mendaftarkan keluarga: {str(exc)}", "danger")
-
-    return render_template("warga/form_keluarga.html", form=form)
-
-
 UPLOAD_DIR = "uploads/temp"
+KK_STORAGE_DIR = "uploads/kk"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(KK_STORAGE_DIR, exist_ok=True)
+
+ALLOWED_KK_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
+MAX_KK_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 OCR_TIMEOUT_SECONDS = int(os.environ.get("OCR_TIMEOUT_SECONDS", 60))
 _ocr_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ocr_worker")
 
-@warga_bp.route("/keluarga/ocr", methods=["POST"])
-@login_required
-@role_required("admin", "petugas_verifikasi")
-def ocr_kk_route():
-    file = request.files.get("foto_kk")
-    if not file or not file.filename.lower().endswith((".jpg", ".jpeg", ".png")):
-        return jsonify({"error": "File harus berupa gambar JPG/PNG"}), 400
 
-    path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4().hex}.jpg")
-    file.save(path)
+def _validate_kk_file(file_storage):
+    """Validasi tipe berkas (JPG/JPEG/PNG/PDF), header magic bytes, dan ukuran maksimal 10 MB."""
+    if not file_storage or not getattr(file_storage, "filename", ""):
+        return False, "Berkas dokumen Kartu Keluarga wajib dipilih.", ""
+
+    ext = os.path.splitext(secure_filename(file_storage.filename))[1].lower()
+    if ext not in ALLOWED_KK_EXTENSIONS:
+        return False, "Format file tidak didukung. Gunakan JPG, JPEG, PNG, atau PDF.", ""
+
+    file_storage.stream.seek(0, os.SEEK_END)
+    size = file_storage.stream.tell()
+    file_storage.stream.seek(0)
+    if size <= 0:
+        return False, "Berkas yang diunggah kosong.", ""
+    if size > MAX_KK_FILE_SIZE:
+        return False, "Ukuran berkas melebihi batas maksimal 10 MB.", ""
+
+    header = file_storage.stream.read(8)
+    file_storage.stream.seek(0)
+    if ext in (".jpg", ".jpeg") and not header.startswith(b"\xff\xd8\xff"):
+        return False, "Isi berkas tidak valid sebagai gambar JPG/JPEG.", ""
+    if ext == ".png" and not header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return False, "Isi berkas tidak valid sebagai gambar PNG.", ""
+    if ext == ".pdf" and not header.startswith(b"%PDF"):
+        return False, "Isi berkas tidak valid sebagai dokumen PDF.", ""
+
+    return True, "", ext
+
+
+def _run_ocr_for_user(file_storage, user_id):
+    """Simpan sementara berkas berdasar user_id, jalankan OCR, dan bersihkan berkas sementara."""
+    ok, err_msg, ext = _validate_kk_file(file_storage)
+    if not ok:
+        return {"error": err_msg}, 400
+
+    temp_path = os.path.join(UPLOAD_DIR, f"u{user_id}_{uuid.uuid4().hex}{ext}")
+    file_storage.save(temp_path)
     try:
-        future = _ocr_executor.submit(baca_kk, path, timeout=OCR_TIMEOUT_SECONDS)
+        future = _ocr_executor.submit(baca_kk, temp_path, timeout=OCR_TIMEOUT_SECONDS)
         hasil = future.result(timeout=OCR_TIMEOUT_SECONDS)
-        return jsonify(hasil)
+        hasil["user_id"] = user_id
+        return hasil, 200
     except FuturesTimeoutError:
-        return jsonify({
-            "error": f"Waktu pemrosesan OCR melebihi batas ({OCR_TIMEOUT_SECONDS} detik). Sistem dialihkan ke pengisian manual.",
+        return {
+            "error": f"Waktu pemrosesan OCR melebihi batas ({OCR_TIMEOUT_SECONDS} detik). Silakan lengkapi data secara manual.",
             "timeout": True,
             "no_kk": "",
             "kepala_keluarga": "",
             "alamat": "",
-            "peringatan": "Pemrosesan OCR memakan waktu terlalu lama. Silakan masukkan data Kartu Keluarga secara manual atau gunakan foto yang lebih jelas/berukuran lebih ringkas."
-        }), 408
+            "rt_rw": "",
+            "desa_kelurahan": "",
+            "kecamatan": "",
+            "kabupaten_kota": "",
+            "provinsi": "",
+            "anggota_keluarga": [],
+            "peringatan": "Pemrosesan OCR memakan waktu terlalu lama. Anda tetap dapat mengisi atau memperbaiki data secara manual."
+        }, 408
     except Exception as exc:
         import traceback
         traceback.print_exc()
-        return jsonify({"error": f"Gagal membaca gambar: {exc}"}), 500
+        return {"error": f"Gagal membaca dokumen: {exc}"}, 500
     finally:
-        if os.path.exists(path):
-            os.remove(path)
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+@warga_bp.route("/keluarga/tambah", methods=["GET", "POST"])
+@login_required
+def tambah_keluarga():
+    """Rute lama + Kartu Keluarga: diarahkan ke Akun User (warga) atau Data Warga (admin)."""
+    if current_user.is_warga:
+        return redirect(url_for("dashboard") + "#dokumen-kk")
+    flash("Fitur unggah & pendaftaran Kartu Keluarga kini dilakukan secara mandiri oleh warga melalui Akun User.", "info")
+    return redirect(url_for("warga.daftar_warga"))
+
+
+@warga_bp.route("/akun/kk/ocr", methods=["POST"])
+@login_required
+@role_required("warga")
+def ocr_kk_warga():
+    """Endpoint OCR Kartu Keluarga khusus akun warga yang sedang login."""
+    file = request.files.get("dokumen_kk") or request.files.get("foto_kk")
+    payload, status_code = _run_ocr_for_user(file, current_user.id)
+    return jsonify(payload), status_code
+
+
+@warga_bp.route("/keluarga/ocr", methods=["POST"])
+@login_required
+def ocr_kk_route():
+    """Endpoint OCR kompatibel yang terikat ke akun pengguna yang sedang login."""
+    file = request.files.get("foto_kk") or request.files.get("dokumen_kk")
+    payload, status_code = _run_ocr_for_user(file, current_user.id)
+    return jsonify(payload), status_code
+
+
+@warga_bp.route("/akun/kk/simpan", methods=["POST"])
+@login_required
+@role_required("warga")
+def simpan_kk_warga():
+    """Menyimpan dokumen KK (JPG/PNG/PDF) dan data hasil OCR/edit milik akun warga yang sedang login."""
+    nomor_kk = (request.form.get("nomor_kk") or "").strip()
+    kepala_keluarga = (request.form.get("kepala_keluarga") or "").strip()
+    alamat = (request.form.get("alamat") or "").strip()
+    rt_rw = (request.form.get("rt_rw") or "").strip()
+    desa_kelurahan = (request.form.get("desa_kelurahan") or "").strip()
+    kecamatan = (request.form.get("kecamatan") or "").strip()
+    kabupaten_kota = (request.form.get("kabupaten_kota") or "").strip()
+    provinsi = (request.form.get("provinsi") or "").strip()
+    hasil_ocr_raw = request.form.get("hasil_ocr_json") or ""
+
+    if not re.match(r"^\d{16}$", nomor_kk):
+        return jsonify({"success": False, "error": "Nomor KK harus tepat 16 digit angka numerik."}), 400
+    if not kepala_keluarga:
+        return jsonify({"success": False, "error": "Nama Kepala Keluarga wajib diisi."}), 400
+    if not alamat:
+        return jsonify({"success": False, "error": "Alamat domisili wajib diisi."}), 400
+
+    # Identifikasi apakah akun ini sudah memiliki record Keluarga
+    existing_kk = current_user.data_keluarga
+    warga_terkait = current_user.data_warga
+
+    # Cek duplikasi Nomor KK terhadap keluarga milik akun/warga lain
+    dup_kk = Keluarga.query.filter_by(nomor_kk=nomor_kk).first()
+    if dup_kk:
+        if existing_kk and dup_kk.id != existing_kk.id:
+            return jsonify({"success": False, "error": f"Nomor KK '{nomor_kk}' sudah terdaftar pada keluarga lain. Duplikasi data KK tidak diperbolehkan."}), 400
+        if not existing_kk:
+            if dup_kk.id_user is not None and dup_kk.id_user != current_user.id:
+                return jsonify({"success": False, "error": f"Nomor KK '{nomor_kk}' sudah terdaftar oleh akun warga lain."}), 400
+            if dup_kk.id_user is None:
+                # Izinkan klaim hanya jika warga_terkait memang anggota keluarga tersebut
+                if not (warga_terkait and warga_terkait.id_keluarga == dup_kk.id):
+                    return jsonify({"success": False, "error": f"Nomor KK '{nomor_kk}' sudah terdaftar dalam sistem. Silakan hubungi admin jika nomor KK tersebut milik keluarga Anda."}), 400
+                existing_kk = dup_kk
+
+    file = request.files.get("dokumen_kk")
+    has_new_file = bool(file and getattr(file, "filename", ""))
+    saved_rel_path = existing_kk.dokumen_kk if existing_kk else None
+
+    if not has_new_file and not saved_rel_path:
+        return jsonify({"success": False, "error": "Silakan unggah berkas dokumen Kartu Keluarga (JPG, JPEG, PNG, atau PDF)."}), 400
+
+    if has_new_file:
+        ok, err_msg, ext = _validate_kk_file(file)
+        if not ok:
+            return jsonify({"success": False, "error": err_msg}), 400
+        proj_root = os.path.abspath(os.path.join(current_app.root_path, ".."))
+        kk_dir = os.path.join(proj_root, KK_STORAGE_DIR)
+        os.makedirs(kk_dir, exist_ok=True)
+        unique_name = f"kk_u{current_user.id}_{uuid.uuid4().hex[:12]}{ext}"
+        dest_abs = os.path.join(kk_dir, unique_name)
+        file.save(dest_abs)
+        saved_rel_path = f"uploads/kk/{unique_name}"
+
+    # Susun data hasil OCR untuk disimpan ke kolom JSON database
+    try:
+        ocr_parsed = json.loads(hasil_ocr_raw) if hasil_ocr_raw.strip() else {}
+        if not isinstance(ocr_parsed, dict):
+            ocr_parsed = {}
+    except Exception:
+        ocr_parsed = {}
+
+    ocr_record = {
+        "no_kk": nomor_kk,
+        "kepala_keluarga": kepala_keluarga,
+        "alamat": alamat,
+        "rt_rw": rt_rw,
+        "desa_kelurahan": desa_kelurahan,
+        "kecamatan": kecamatan,
+        "kabupaten_kota": kabupaten_kota,
+        "provinsi": provinsi,
+        "anggota_keluarga": ocr_parsed.get("anggota_keluarga", []),
+        "raw": ocr_parsed.get("raw", ""),
+        "disimpan_oleh_user_id": current_user.id,
+        "diperbarui_pada": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    try:
+        if existing_kk:
+            riwayat = list(existing_kk.riwayat_dokumen or [])
+            # Arsipkan riwayat dokumen/verifikasi sebelumnya tanpa menghilangkan jejak audit
+            if existing_kk.dokumen_kk or existing_kk.status_dokumen != "Belum Diunggah":
+                riwayat.append({
+                    "aksi": "Pembaruan Dokumen KK oleh Warga",
+                    "nomor_kk": existing_kk.nomor_kk,
+                    "dokumen_kk": existing_kk.dokumen_kk,
+                    "status_sebelumnya": existing_kk.status_dokumen,
+                    "catatan_sebelumnya": existing_kk.catatan_verifikasi,
+                    "tanggal_verifikasi_sebelumnya": existing_kk.tanggal_verifikasi_dokumen.isoformat() if existing_kk.tanggal_verifikasi_dokumen else None,
+                    "waktu": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+
+            existing_kk.nomor_kk = nomor_kk
+            existing_kk.kepala_keluarga = kepala_keluarga
+            existing_kk.alamat = alamat
+            existing_kk.rt_rw = rt_rw or None
+            existing_kk.desa_kelurahan = desa_kelurahan or None
+            existing_kk.kecamatan = kecamatan or None
+            existing_kk.kabupaten_kota = kabupaten_kota or None
+            existing_kk.provinsi = provinsi or None
+            existing_kk.id_user = current_user.id
+            existing_kk.dokumen_kk = saved_rel_path
+            existing_kk.hasil_ocr_kk = ocr_record
+            existing_kk.status_dokumen = "Menunggu Verifikasi"
+            existing_kk.catatan_verifikasi = None
+            existing_kk.riwayat_dokumen = riwayat
+            keluarga_obj = existing_kk
+        else:
+            keluarga_obj = Keluarga(
+                nomor_kk=nomor_kk,
+                kepala_keluarga=kepala_keluarga,
+                alamat=alamat,
+                rt_rw=rt_rw or None,
+                desa_kelurahan=desa_kelurahan or None,
+                kecamatan=kecamatan or None,
+                kabupaten_kota=kabupaten_kota or None,
+                provinsi=provinsi or None,
+                id_user=current_user.id,
+                dokumen_kk=saved_rel_path,
+                hasil_ocr_kk=ocr_record,
+                status_dokumen="Menunggu Verifikasi",
+                riwayat_dokumen=[{
+                    "aksi": "Unggahan Pertama Dokumen KK oleh Warga",
+                    "nomor_kk": nomor_kk,
+                    "dokumen_kk": saved_rel_path,
+                    "status": "Menunggu Verifikasi",
+                    "waktu": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }]
+            )
+            db.session.add(keluarga_obj)
+
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "message": "Dokumen dan data Kartu Keluarga berhasil disimpan dan dikirim untuk verifikasi Admin.",
+            "keluarga_id": keluarga_obj.id,
+            "status_dokumen": keluarga_obj.status_dokumen,
+            "dokumen_url": url_for("warga.lihat_dokumen_kk", keluarga_id=keluarga_obj.id)
+        })
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"success": False, "error": f"Nomor KK '{nomor_kk}' sudah terdaftar dalam database."}), 400
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"success": False, "error": f"Gagal menyimpan data KK: {exc}"}), 500
+
+
+@warga_bp.route("/keluarga/dokumen/<int:keluarga_id>", methods=["GET"])
+@login_required
+def lihat_dokumen_kk(keluarga_id):
+    """Menampilkan file dokumen KK dengan pembatasan akses ketat per akun pemilik/admin."""
+    keluarga = db.get_or_404(Keluarga, keluarga_id)
+
+    # Kontrol Akses: Admin/Petugas boleh akses, Warga hanya boleh akses KK miliknya sendiri
+    if not current_user.is_warga:
+        pass  # Admin / petugas_verifikasi diizinkan
+    else:
+        warga_terkait = current_user.data_warga
+        is_owner = (keluarga.id_user == current_user.id)
+        is_member = bool(warga_terkait and warga_terkait.id_keluarga == keluarga.id)
+        if not (is_owner or is_member):
+            abort(403)
+
+    if not keluarga.dokumen_kk:
+        abort(404)
+
+    proj_root = os.path.abspath(os.path.join(current_app.root_path, ".."))
+    abs_path = os.path.abspath(os.path.join(proj_root, keluarga.dokumen_kk))
+    kk_root = os.path.abspath(os.path.join(proj_root, KK_STORAGE_DIR))
+    if not abs_path.startswith(kk_root) or not os.path.exists(abs_path):
+        abort(404)
+
+    return send_file(abs_path, as_attachment=False)
+
+
+@warga_bp.route("/keluarga/<int:keluarga_id>/verifikasi-dokumen", methods=["POST"])
+@login_required
+@role_required("admin", "petugas_verifikasi")
+def verifikasi_dokumen_kk(keluarga_id):
+    """Endpoint Admin/Petugas untuk memverifikasi dokumen KK yang diunggah warga."""
+    keluarga = db.get_or_404(Keluarga, keluarga_id)
+    aksi = (request.form.get("aksi") or "").strip().lower()
+    catatan = (request.form.get("catatan_verifikasi") or "").strip()
+
+    if aksi == "terverifikasi":
+        status_baru = "Terverifikasi"
+    elif aksi == "perlu_perbaikan":
+        status_baru = "Perlu Perbaikan"
+        if not catatan:
+            catatan = "Dokumen atau data hasil OCR kurang jelas/tidak sesuai. Silakan unggah ulang atau perbaiki data."
+    else:
+        flash("Status verifikasi dokumen KK tidak valid.", "danger")
+        return redirect(url_for("warga.daftar_warga"))
+
+    now_dt = datetime.datetime.now()
+    riwayat = list(keluarga.riwayat_dokumen or [])
+    riwayat.append({
+        "aksi": f"Verifikasi Admin: {status_baru}",
+        "petugas": current_user.nama,
+        "status": status_baru,
+        "catatan": catatan,
+        "waktu": now_dt.strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+    keluarga.status_dokumen = status_baru
+    keluarga.catatan_verifikasi = catatan or None
+    keluarga.id_petugas_verifikasi = current_user.id
+    keluarga.tanggal_verifikasi_dokumen = now_dt
+    keluarga.riwayat_dokumen = riwayat
+
+    db.session.commit()
+    flash(f"Dokumen KK No. {keluarga.nomor_kk} ({keluarga.kepala_keluarga}) ditandai sebagai '{status_baru}'.", "success")
+    return redirect(url_for("warga.daftar_warga"))

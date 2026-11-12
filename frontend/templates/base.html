@@ -45,6 +45,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}#dokumen-kk">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>Dokumen Kartu Keluarga</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'desil.ajukan_perubahan' %}active{% endif %}" href="{{ url_for('desil.ajukan_perubahan') }}">
                         <i class="bi bi-arrow-repeat"></i>
                         <span>Ajukan Perubahan Desil</span>
@@ -168,6 +174,11 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
                             <i class="bi bi-person-vcard"></i> Status Bansos Saya
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}#dokumen-kk" data-bs-dismiss="offcanvas">
+                            <i class="bi bi-file-earmark-text"></i> Dokumen Kartu Keluarga
                         </a>
                     </li>
                     <li class="nav-item">

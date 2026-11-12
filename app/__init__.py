@@ -1,8 +1,44 @@
 import os
 from flask import Flask, redirect, url_for, render_template
 from flask_login import login_required, current_user
+from sqlalchemy import inspect, text
 from config import config_by_name
 from app.extensions import db, login_manager, migrate
+
+
+def _ensure_keluarga_schema():
+    """Menambahkan kolom baru pada tabel keluarga secara aman jika belum tersedia."""
+    try:
+        insp = inspect(db.engine)
+        if "keluarga" not in insp.get_table_names():
+            return
+        existing = {col["name"] for col in insp.get_columns("keluarga")}
+        dialect = db.engine.dialect.name
+        json_type = "JSON" if dialect == "mysql" else "TEXT"
+        needed = [
+            ("id_user", "INTEGER NULL"),
+            ("rt_rw", "VARCHAR(20) NULL"),
+            ("desa_kelurahan", "VARCHAR(100) NULL"),
+            ("kecamatan", "VARCHAR(100) NULL"),
+            ("kabupaten_kota", "VARCHAR(100) NULL"),
+            ("provinsi", "VARCHAR(100) NULL"),
+            ("dokumen_kk", "VARCHAR(255) NULL"),
+            ("hasil_ocr_kk", f"{json_type} NULL"),
+            ("status_dokumen", "VARCHAR(30) NOT NULL DEFAULT 'Belum Diunggah'"),
+            ("catatan_verifikasi", "TEXT NULL"),
+            ("id_petugas_verifikasi", "INTEGER NULL"),
+            ("tanggal_verifikasi_dokumen", "DATETIME NULL"),
+            ("riwayat_dokumen", f"{json_type} NULL"),
+        ]
+        altered = False
+        for col, ddl in needed:
+            if col not in existing:
+                db.session.execute(text(f"ALTER TABLE keluarga ADD COLUMN {col} {ddl}"))
+                altered = True
+        if altered:
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def create_app(config_name="default"):
@@ -31,6 +67,9 @@ def create_app(config_name="default"):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+
+    with app.app_context():
+        _ensure_keluarga_schema()
 
     # Register Blueprints
     from app.auth import auth_bp
@@ -77,6 +116,7 @@ def create_app(config_name="default"):
         # Tampilan khusus jika pengguna login dengan role 'warga'
         if current_user.is_warga:
             warga_terkait = current_user.data_warga
+            keluarga_terkait = current_user.data_keluarga
             daftar_program = ProgramBantuan.query.filter_by(is_active=True).all()
             riwayat_user = []
             riwayat_desil = []
@@ -89,6 +129,7 @@ def create_app(config_name="default"):
             return render_template(
                 "dashboard_warga.html",
                 warga=warga_terkait,
+                keluarga=keluarga_terkait,
                 daftar_program=daftar_program,
                 riwayat=riwayat_user,
                 riwayat_desil=riwayat_desil

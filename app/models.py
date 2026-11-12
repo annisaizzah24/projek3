@@ -196,6 +196,17 @@ class User(db.Model, UserMixin):
             return None
         return Warga.query.filter_by(nik=self.nik).first()
 
+    @property
+    def data_keluarga(self):
+        """Mengambil dokumen Kartu Keluarga yang terhubung dengan akun warga ini."""
+        kk = Keluarga.query.filter_by(id_user=self.id).order_by(Keluarga.updated_at.desc()).first()
+        if kk:
+            return kk
+        w = self.data_warga
+        if w and w.keluarga:
+            return w.keluarga
+        return None
+
     def __repr__(self):
         return f"<User {self.username} ({self.role})>"
 
@@ -215,11 +226,43 @@ class Keluarga(db.Model):
     nomor_kk = Column(String(16), unique=True, nullable=False, index=True)
     kepala_keluarga = Column(String(100), nullable=False)
     alamat = Column(Text, nullable=False)
+
+    # Atribut wilayah, unggahan dokumen KK mandiri warga, hasil OCR & status verifikasi
+    id_user = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+        index=True
+    )
+    rt_rw = Column(String(20), nullable=True)
+    desa_kelurahan = Column(String(100), nullable=True)
+    kecamatan = Column(String(100), nullable=True)
+    kabupaten_kota = Column(String(100), nullable=True)
+    provinsi = Column(String(100), nullable=True)
+    dokumen_kk = Column(String(255), nullable=True, comment="Path file dokumen KK (JPG/PNG/PDF)")
+    hasil_ocr_kk = Column(JSON, nullable=True, comment="Hasil pembacaan OCR lengkap & daftar anggota keluarga")
+    status_dokumen = Column(
+        String(30),
+        nullable=False,
+        default="Belum Diunggah",
+        comment="Status dokumen: Belum Diunggah, Menunggu Verifikasi, Terverifikasi, Perlu Perbaikan"
+    )
+    catatan_verifikasi = Column(Text, nullable=True, comment="Catatan verifikasi admin/petugas")
+    id_petugas_verifikasi = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True
+    )
+    tanggal_verifikasi_dokumen = Column(DateTime, nullable=True)
+    riwayat_dokumen = Column(JSON, nullable=True, comment="Riwayat unggahan & verifikasi KK sebelumnya")
+
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships: ON DELETE RESTRICT
     warga_list = relationship("Warga", back_populates="keluarga")
+    pemilik_akun = relationship("User", foreign_keys=[id_user], backref="keluarga_dimiliki")
+    petugas_verifikasi = relationship("User", foreign_keys=[id_petugas_verifikasi])
 
     @validates("nomor_kk")
     def validate_nomor_kk(self, key, nomor_kk):

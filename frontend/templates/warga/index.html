@@ -15,10 +15,6 @@
         </p>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ url_for('warga.tambah_keluarga') }}" class="btn btn-outline-primary">
-            <i class="bi bi-folder-plus"></i>
-            <span>+ Kartu Keluarga</span>
-        </a>
         <a href="{{ url_for('warga.tambah_warga') }}" class="btn btn-primary">
             <i class="bi bi-person-plus-fill"></i>
             <span>+ Tambah Warga</span>
@@ -134,6 +130,35 @@
                         <td>
                             <div class="small fw-semibold text-dark font-monospace">{{ w.keluarga.nomor_kk }}</div>
                             <div class="text-muted small" style="font-size: 0.75rem;">Kepala: {{ w.keluarga.kepala_keluarga }}</div>
+                            {% if w.keluarga.status_dokumen == 'Terverifikasi' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill mt-1" style="font-size: 0.68rem;">
+                                    <i class="bi bi-patch-check-fill me-1"></i>KK Terverifikasi
+                                </span>
+                            {% elif w.keluarga.status_dokumen == 'Menunggu Verifikasi' %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill mt-1" style="font-size: 0.68rem;">
+                                    <i class="bi bi-clock-history me-1"></i>KK Menunggu Verifikasi
+                                </span>
+                            {% elif w.keluarga.status_dokumen == 'Perlu Perbaikan' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill mt-1" style="font-size: 0.68rem;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>KK Perlu Perbaikan
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill mt-1" style="font-size: 0.68rem;">
+                                    Dokumen KK Belum Diunggah
+                                </span>
+                            {% endif %}
+                            {% if w.keluarga.dokumen_kk %}
+                                <div class="mt-1">
+                                    <button type="button"
+                                            class="btn btn-link btn-sm p-0 text-decoration-none small btn-lihat-kk"
+                                            style="font-size: 0.74rem;"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#kkDetailModal"
+                                            data-kk-id="{{ w.keluarga.id }}">
+                                        <i class="bi bi-file-earmark-text me-1"></i>Lihat KK &amp; OCR
+                                    </button>
+                                </div>
+                            {% endif %}
                         </td>
                         <td>
                             <div><span class="badge bg-secondary rounded-pill">{{ w.jumlah_tanggungan }} Tanggungan</span></div>
@@ -190,6 +215,128 @@
     {% endif %}
 </div>
 
+<!-- Dokumen Kartu Keluarga Unggahan Warga (OCR & Verifikasi Admin) -->
+<div class="card border-0 shadow-sm mt-4" id="dokumen-kk-warga">
+    <div class="card-header bg-white py-3.5 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-check-fill text-primary"></i>
+                <span>Verifikasi Dokumen Kartu Keluarga (Unggahan Warga)</span>
+            </h6>
+            <div class="small text-muted">Dokumen KK dan hasil pembacaan OCR yang dikirimkan langsung melalui akun warga</div>
+        </div>
+        {% if pending_kk_count and pending_kk_count > 0 %}
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-1.5">
+                <i class="bi bi-clock-history me-1"></i>{{ pending_kk_count }} Menunggu Verifikasi
+            </span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if dokumen_kk_list %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Akun Pengunggah</th>
+                        <th>Nomor KK &amp; Kepala Keluarga</th>
+                        <th>Alamat &amp; Wilayah (Hasil OCR)</th>
+                        <th>Status Dokumen</th>
+                        <th class="text-end pe-4">Aksi &amp; Verifikasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for k in dokumen_kk_list %}
+                    <tr>
+                        <td class="ps-4">
+                            {% if k.pemilik_akun %}
+                                <div class="fw-bold text-dark">{{ k.pemilik_akun.nama }}</div>
+                                <div class="small text-muted">@{{ k.pemilik_akun.username }}{% if k.pemilik_akun.nik %} · <span class="font-monospace">{{ k.pemilik_akun.nik }}</span>{% endif %}</div>
+                            {% else %}
+                                <div class="fw-semibold text-muted">Terhubung Data Keluarga</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="font-monospace fw-bold text-primary">{{ k.nomor_kk }}</div>
+                            <div class="small fw-semibold text-dark">{{ k.kepala_keluarga }}</div>
+                            {% if k.hasil_ocr_kk and k.hasil_ocr_kk.get('anggota_keluarga') %}
+                                <div class="small text-muted">{{ k.hasil_ocr_kk.get('anggota_keluarga')|length }} anggota terdeteksi OCR</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="small text-dark">{{ k.alamat }}</div>
+                            <div class="small text-muted" style="font-size: 0.75rem;">
+                                {% if k.rt_rw %}RT/RW {{ k.rt_rw }} · {% endif %}
+                                {% if k.desa_kelurahan %}{{ k.desa_kelurahan }}{% endif %}
+                                {% if k.kecamatan %}, Kec. {{ k.kecamatan }}{% endif %}
+                                {% if k.kabupaten_kota %}, {{ k.kabupaten_kota }}{% endif %}
+                                {% if k.provinsi %} — {{ k.provinsi }}{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if k.status_dokumen == 'Terverifikasi' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
+                                </span>
+                            {% elif k.status_dokumen == 'Menunggu Verifikasi' %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-clock-history me-1"></i>Menunggu Verifikasi
+                                </span>
+                            {% elif k.status_dokumen == 'Perlu Perbaikan' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Perlu Perbaikan
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2.5 py-1">{{ k.status_dokumen }}</span>
+                            {% endif %}
+                            {% if k.catatan_verifikasi %}
+                                <div class="small text-muted mt-1" style="font-size: 0.73rem;">Catatan: {{ k.catatan_verifikasi|truncate(45) }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm btn-lihat-kk"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#kkDetailModal"
+                                    data-kk-id="{{ k.id }}">
+                                <i class="bi bi-eye me-1"></i>Lihat &amp; Verifikasi
+                            </button>
+                            <script type="application/json" id="kk-json-{{ k.id }}">
+                            {{ {
+                                "id": k.id,
+                                "nomor_kk": k.nomor_kk,
+                                "kepala_keluarga": k.kepala_keluarga,
+                                "alamat": k.alamat,
+                                "rt_rw": k.rt_rw or "-",
+                                "desa_kelurahan": k.desa_kelurahan or "-",
+                                "kecamatan": k.kecamatan or "-",
+                                "kabupaten_kota": k.kabupaten_kota or "-",
+                                "provinsi": k.provinsi or "-",
+                                "status_dokumen": k.status_dokumen,
+                                "catatan_verifikasi": k.catatan_verifikasi or "",
+                                "dokumen_kk": k.dokumen_kk or "",
+                                "dokumen_url": url_for('warga.lihat_dokumen_kk', keluarga_id=k.id) if k.dokumen_kk else "",
+                                "verifikasi_url": url_for('warga.verifikasi_dokumen_kk', keluarga_id=k.id),
+                                "is_pdf": (k.dokumen_kk or "").lower().endswith(".pdf"),
+                                "pemilik": (k.pemilik_akun.nama ~ " (@" ~ k.pemilik_akun.username ~ ")") if k.pemilik_akun else "Terdaftar di Master Keluarga",
+                                "anggota": (k.hasil_ocr_kk.get("anggota_keluarga", []) if k.hasil_ocr_kk else []),
+                                "riwayat": (k.riwayat_dokumen or [])
+                            }|tojson }}
+                            </script>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted small">
+            <i class="bi bi-file-earmark-text fs-3 d-block mb-2 opacity-50"></i>
+            Belum ada dokumen Kartu Keluarga yang diunggah oleh akun warga.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Modal Photo Lightbox Preview (UX Delight) -->
 <div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -200,6 +347,111 @@
             </div>
             <div class="modal-body p-0 text-center bg-dark">
                 <img id="modalPreviewImg" src="" alt="Preview Foto Rumah" class="img-fluid" style="max-height: 550px; width: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detail & Verifikasi Dokumen KK + Hasil OCR -->
+<div class="modal fade" id="kkDetailModal" tabindex="-1" aria-labelledby="kkDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-bottom py-3 bg-light">
+                <div>
+                    <h6 class="modal-title fw-bold text-dark mb-0" id="kkDetailModalLabel">
+                        <i class="bi bi-file-earmark-check text-primary me-1"></i> Detail &amp; Verifikasi Dokumen Kartu Keluarga
+                    </h6>
+                    <div class="small text-muted" id="kkModalSubtitle">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="fw-semibold small text-muted mb-2">Preview Dokumen Diunggah</div>
+                        <div class="border rounded-3 bg-dark text-center overflow-hidden p-2" style="min-height: 360px;">
+                            <img id="kkModalImg" src="" alt="Dokumen KK" class="img-fluid d-none" style="max-height: 460px; object-fit: contain;">
+                            <iframe id="kkModalPdf" src="" class="w-100 d-none border-0 bg-white" style="height: 460px;"></iframe>
+                            <div id="kkModalNoFile" class="text-white-50 py-5 d-none">Dokumen fisik belum tersedia.</div>
+                        </div>
+                        <div class="mt-2 text-end">
+                            <a id="kkModalOpenTab" href="#" target="_blank" class="btn btn-outline-secondary btn-sm d-none">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Buka Dokumen di Tab Baru
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-muted">Data Kartu Keluarga &amp; Hasil OCR</span>
+                            <span id="kkModalStatusBadge" class="badge rounded-pill">-</span>
+                        </div>
+                        <div class="border rounded-3 p-3 bg-light mb-3 small">
+                            <div class="row g-2">
+                                <div class="col-sm-6">
+                                    <div class="text-muted">Nomor KK (16 Digit):</div>
+                                    <div class="font-monospace fw-bold text-primary fs-6" id="kkModalNoKK">-</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="text-muted">Kepala Keluarga:</div>
+                                    <div class="fw-bold text-dark" id="kkModalKepala">-</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="text-muted">Alamat:</div>
+                                    <div class="text-dark" id="kkModalAlamat">-</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="text-muted">RT/RW:</div>
+                                    <div class="fw-semibold" id="kkModalRtRw">-</div>
+                                </div>
+                                <div class="col-sm-8">
+                                    <div class="text-muted">Desa/Kelurahan:</div>
+                                    <div class="fw-semibold" id="kkModalDesa">-</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="text-muted">Kecamatan:</div>
+                                    <div class="fw-semibold" id="kkModalKec">-</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="text-muted">Kabupaten/Kota:</div>
+                                    <div class="fw-semibold" id="kkModalKab">-</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="text-muted">Provinsi:</div>
+                                    <div class="fw-semibold" id="kkModalProv">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="kkModalAnggotaBox" class="mb-3 d-none">
+                            <div class="fw-semibold small text-muted mb-1">Anggota Keluarga Terdeteksi OCR</div>
+                            <div class="table-responsive border rounded-3" style="max-height: 150px;">
+                                <table class="table table-sm mb-0 small">
+                                    <thead class="table-light">
+                                        <tr><th>No</th><th>Nama</th><th>NIK</th></tr>
+                                    </thead>
+                                    <tbody id="kkModalAnggotaBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Form Verifikasi Admin -->
+                        <form id="kkVerifForm" method="POST" action="#" class="border rounded-3 p-3 bg-white">
+                            <div class="fw-bold small text-dark mb-2">Keputusan Verifikasi Dokumen</div>
+                            <div class="mb-2">
+                                <label class="form-label small text-muted mb-1">Catatan Verifikasi (Wajib diisi jika Perlu Perbaikan)</label>
+                                <textarea name="catatan_verifikasi" id="kkModalCatatan" class="form-control form-control-sm" rows="2" placeholder="Tuliskan catatan hasil pemeriksaan dokumen KK..."></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" name="aksi" value="terverifikasi" class="btn btn-success btn-sm flex-fill fw-semibold">
+                                    <i class="bi bi-check-circle me-1"></i>Verifikasi (Valid)
+                                </button>
+                                <button type="submit" name="aksi" value="perlu_perbaikan" class="btn btn-danger btn-sm flex-fill fw-semibold">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Perlu Perbaikan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -219,6 +471,74 @@
                 const title = this.getAttribute("data-title");
                 if (modalImg) modalImg.src = src;
                 if (modalLabel) modalLabel.textContent = title;
+            });
+        });
+
+        // Handler Modal Detail & Verifikasi KK
+        document.querySelectorAll(".btn-lihat-kk").forEach(btn => {
+            btn.addEventListener("click", function() {
+                const kkId = this.getAttribute("data-kk-id");
+                const jsonEl = document.getElementById("kk-json-" + kkId);
+                if (!jsonEl) return;
+                const d = JSON.parse(jsonEl.textContent);
+
+                document.getElementById("kkModalSubtitle").textContent = "Pengunggah: " + d.pemilik;
+                document.getElementById("kkModalNoKK").textContent = d.nomor_kk || "-";
+                document.getElementById("kkModalKepala").textContent = d.kepala_keluarga || "-";
+                document.getElementById("kkModalAlamat").textContent = d.alamat || "-";
+                document.getElementById("kkModalRtRw").textContent = d.rt_rw || "-";
+                document.getElementById("kkModalDesa").textContent = d.desa_kelurahan || "-";
+                document.getElementById("kkModalKec").textContent = d.kecamatan || "-";
+                document.getElementById("kkModalKab").textContent = d.kabupaten_kota || "-";
+                document.getElementById("kkModalProv").textContent = d.provinsi || "-";
+                document.getElementById("kkModalCatatan").value = d.catatan_verifikasi || "";
+                document.getElementById("kkVerifForm").action = d.verifikasi_url;
+
+                const badge = document.getElementById("kkModalStatusBadge");
+                badge.textContent = d.status_dokumen;
+                badge.className = "badge rounded-pill px-2.5 py-1 ";
+                if (d.status_dokumen === "Terverifikasi") badge.className += "bg-success text-white";
+                else if (d.status_dokumen === "Menunggu Verifikasi") badge.className += "bg-warning text-dark";
+                else if (d.status_dokumen === "Perlu Perbaikan") badge.className += "bg-danger text-white";
+                else badge.className += "bg-secondary text-white";
+
+                const imgEl = document.getElementById("kkModalImg");
+                const pdfEl = document.getElementById("kkModalPdf");
+                const noFileEl = document.getElementById("kkModalNoFile");
+                const openTab = document.getElementById("kkModalOpenTab");
+
+                imgEl.classList.add("d-none");
+                pdfEl.classList.add("d-none");
+                noFileEl.classList.add("d-none");
+                openTab.classList.add("d-none");
+
+                if (d.dokumen_url) {
+                    openTab.href = d.dokumen_url;
+                    openTab.classList.remove("d-none");
+                    if (d.is_pdf) {
+                        pdfEl.src = d.dokumen_url;
+                        pdfEl.classList.remove("d-none");
+                    } else {
+                        imgEl.src = d.dokumen_url;
+                        imgEl.classList.remove("d-none");
+                    }
+                } else {
+                    noFileEl.classList.remove("d-none");
+                }
+
+                const angBox = document.getElementById("kkModalAnggotaBox");
+                const angBody = document.getElementById("kkModalAnggotaBody");
+                angBody.innerHTML = "";
+                if (d.anggota && d.anggota.length > 0) {
+                    d.anggota.forEach((a, idx) => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `<td>${a.no || idx + 1}</td><td>${a.nama || "-"}</td><td class="font-monospace">${a.nik || "-"}</td>`;
+                        angBody.appendChild(tr);
+                    });
+                    angBox.classList.remove("d-none");
+                } else {
+                    angBox.classList.add("d-none");
+                }
             });
         });
     });

@@ -33,7 +33,7 @@ def get_reader():
 
 # Pemetaan karakter OCR yang sering tertukar antara huruf dan angka pada dokumen resmi
 DIGIT_FIX = {
-    'O': '0', 'o': '0', 'D': '0', 'Q': '0',
+    'O': '0', 'o': '0', 'D': '0', 'Q': '0', 'C': '0',
     'I': '1', 'l': '1', '|': '1', 'i': '1', '!': '1', ']': '1', 'j': '1', '/': '1',
     'Z': '2', 'z': '2',
     'E': '3',
@@ -92,10 +92,25 @@ def valid_no_kk(s):
 
 def muat_gambar(path, max_dimension=1600):
     """
-    Muat gambar dari path, lakukan koreksi EXIF orientation,
+    Muat gambar atau dokumen PDF halaman pertama dari path, lakukan koreksi EXIF orientation,
     dan sesuaikan resolusi agar detail teks optimal tanpa membebani CPU (maks ~1600px).
     """
-    img_pil = ImageOps.exif_transpose(Image.open(path)).convert("RGB")
+    if str(path).lower().endswith(".pdf"):
+        try:
+            import pypdfium2 as pdfium
+        except ImportError:
+            raise RuntimeError("Modul 'pypdfium2' belum terpasang untuk membaca PDF. Install dengan: pip install pypdfium2")
+        pdf = pdfium.PdfDocument(path)
+        if len(pdf) == 0:
+            pdf.close()
+            raise ValueError("Dokumen PDF kosong atau tidak memiliki halaman.")
+        page = pdf[0]
+        bitmap = page.render(scale=2.2)
+        img_pil = bitmap.to_pil().convert("RGB")
+        pdf.close()
+    else:
+        img_pil = ImageOps.exif_transpose(Image.open(path)).convert("RGB")
+
     img_bgr = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
 
     max_dim = max(img_bgr.shape[:2])
@@ -468,6 +483,157 @@ def cari_alamat(items, lines, table_y):
     return ""
 
 
+def cari_metadata_wilayah(items, lines, table_y):
+    """
+    Mengekstrak atribut wilayah dari bagian metadata header Kartu Keluarga:
+    - RT/RW
+    - Desa/Kelurahan
+    - Kecamatan
+    - Kabupaten/Kota
+    - Provinsi
+    """
+    meta = {
+        "rt_rw": "",
+        "desa_kelurahan": "",
+        "kecamatan": "",
+        "kabupaten_kota": "",
+        "provinsi": "",
+    }
+    stop_regex = r'\s+(?:Desa|Kelurahan|Kecam|Kabup|Kab\w*[/\\]?Kota|Kota\b|Provins|Kode\s*Pos|RT\s*[/\\I|1l]?\s*RW|Kewarga|No\.?\s*Paspor)'
+
+    for line in lines[:15]:
+        # RT/RW
+        if not meta["rt_rw"]:
+            m = re.search(
+                r'(?:rt\s*[/\\I|1l]?\s*rw|rtirw)\s*[:.\-]?\s*([0-9oOlI]{1,4}\s*[/\\I|\-]\s*(?:[0-9oOlI]{1,4}|-+))',
+                line,
+                re.IGNORECASE
+            )
+            if m:
+                val = m.group(1).strip(' :;.')
+                val = re.sub(r'[oO]', '0', val)
+                val = re.sub(r'[I|l]', '/', val, count=1) if '/' not in val and '-' not in val else val
+                meta["rt_rw"] = val
+
+        # Desa / Kelurahan
+        if not meta["desa_kelurahan"]:
+            m = re.search(
+                r'(?:desa\s*[/\\I|1l]?\s*kelurahan|desalkelurahan|kelurahan)\s*[:.\-]?\s*(.+)',
+                line,
+                re.IGNORECASE
+            )
+            if m:
+                val = re.split(stop_regex, m.group(1), flags=re.IGNORECASE)[0].strip(' :;.-')
+                if val and len(val) > 1 and val.lower() not in ('desa', 'kelurahan', 'desa/kelurahan'):
+                    meta["desa_kelurahan"] = val
+
+        # Kecamatan
+        if not meta["kecamatan"]:
+            m = re.search(
+                r'(?:kecama[tl]an|kec\.?)\s*[:.\-]?\s*(.+)',
+                line,
+                re.IGNORECASE
+            )
+            if m:
+                val = re.split(stop_regex, m.group(1), flags=re.IGNORECASE)[0].strip(' :;.-')
+                if val and len(val) > 1:
+                    meta["kecamatan"] = val
+
+        # Kabupaten / Kota
+        if not meta["kabupaten_kota"]:
+            m = re.search(
+                r'(?:kabupaten\s*[/\\I|1l]?\s*ko[tl]a|kabupatenko[tl]a|kab\.?\s*[/\\I|]?\s*ko[tl]a)\s*[:.\-]?\s*(.+)',
+                line,
+                re.IGNORECASE
+            )
+            if m:
+                val = re.split(stop_regex, m.group(1), flags=re.IGNORECASE)[0].strip(' :;.-')
+                if val and len(val) > 1:
+                    meta["kabupaten_kota"] = val
+
+        # Provinsi
+        if not meta["provinsi"]:
+            m = re.search(
+                r'(?:provins[il]?|prov\.?)\s*[:.\-]?\s*(.+)',
+                line,
+                re.IGNORECASE
+            )
+            if m:
+                val = re.split(stop_regex, m.group(1), flags=re.IGNORECASE)[0].strip(' :;.-')
+                if val and len(val) > 1:
+                    meta["provinsi"] = val
+
+    # Fallback berbasis bounding box untuk label di sisi kanan/kiri header
+    label_patterns = {
+        "rt_rw": r'^(?:rt\s*[/\\I|1l]?\s*rw|rtirw)\b',
+        "desa_kelurahan": r'^(?:desa\s*[/\\I|1l]?\s*kelurahan|desalkelurahan)\b',
+        "kecamatan": r'^(?:kecama[tl]an)\b',
+        "kabupaten_kota": r'^(?:kabupaten\s*[/\\I|1l]?\s*ko[tl]a|kabupatenko[tl]a)\b',
+        "provinsi": r'^(?:provins[il]?)\b',
+    }
+    for key, pat in label_patterns.items():
+        if meta[key]:
+            continue
+        for it in items:
+            if it['yc'] < table_y and re.search(pat, it['text'], re.IGNORECASE):
+                calon = []
+                for other in items:
+                    if other == it or other['yc'] >= table_y:
+                        continue
+                    dx = other['xmin'] - it['xmax']
+                    dy = abs(other['yc'] - it['yc'])
+                    if 0 <= dx <= 300 and dy <= max(it['h'], other['h']) * 0.9:
+                        calon.append(other)
+                if calon:
+                    calon.sort(key=lambda c: c['xmin'])
+                    val = " ".join(c['text'] for c in calon).strip(' :;.-')
+                    val = re.split(stop_regex, val, flags=re.IGNORECASE)[0].strip(' :;.-')
+                    if val:
+                        meta[key] = val
+                        break
+
+    return meta
+
+
+def cari_anggota_keluarga(items, lines, table_y, no_kk=None):
+    """
+    Mengekstrak daftar anggota keluarga (Nama & NIK 16 digit) dari zona tabel KK.
+    Hanya mengambil baris di bawah header tabel keluarga dan mengecualikan Nomor KK.
+    """
+    anggota = []
+    seen_nik = set()
+
+    # Tentukan item di zona tabel dan kelompokkan menjadi baris
+    table_items = [it for it in items if it['yc'] >= table_y]
+    table_lines = susun_baris_dari_items(table_items) if table_items else lines
+
+    for line in table_lines:
+        if re.search(r'\b(?:nik|nama\s*lengkap|tempat\s*lahir|jenis\s*kelamin|golongan\s*darah|status\s*perkawinan)\b', line, re.IGNORECASE):
+            continue
+        tokens = re.split(r'[\s|/]+', line)
+        nik_found = ""
+        nik_token_raw = ""
+        for t in tokens:
+            c = clean_digits(t)
+            if len(c) == 16 and valid_no_kk(c) and c != no_kk:
+                nik_found = c
+                nik_token_raw = t
+                break
+        if nik_found and nik_found not in seen_nik:
+            seen_nik.add(nik_found)
+            # Ekstrak nama di sebelah kiri token NIK
+            pos = line.find(nik_token_raw)
+            nama_part = line[:pos] if pos > 0 else ""
+            nama_part = re.sub(r'^[\d\s.|:\-]+', '', nama_part).strip(' |:.-')
+            anggota.append({
+                "no": len(anggota) + 1,
+                "nama": nama_part or f"Anggota {len(anggota) + 1}",
+                "nik": nik_found
+            })
+
+    return anggota
+
+
 def cari_nik_kepala_keluarga(items, lines, table_y, no_kk=None):
     """
     Mencari NIK Kepala Keluarga (16 digit) dari tabel Kartu Keluarga.
@@ -505,38 +671,8 @@ def cari_nik_kepala_keluarga(items, lines, table_y, no_kk=None):
     return ""
 
 
-def baca_kk(path, timeout=60):
-    """
-    Fungsi utama OCR untuk memindai dokumen Kartu Keluarga dengan proteksi timeout:
-    1. Memuat gambar dan memutar dokumen ke orientasi tegak secara cepat.
-    2. Meningkatkan kontras (CLAHE) dan meluruskan kemiringan sudut (deskew).
-    3. Ekstraksi dua tahap: memprioritaskan pemindaian zona header (45% atas) untuk kecepatan tinggi.
-    4. Mendeteksi batas atas tabel keluarga untuk mengabaikan seluruh NIK tabel.
-    5. Mengidentifikasi Nomor KK (16 digit), Kepala Keluarga, dan Alamat dari header.
-    6. Mencegah pemrosesan berlebih dengan batas timeout yang dapat dikonfigurasi.
-    """
-    start_time = time.time()
-    deadline = start_time + timeout
-
-    reader = get_reader()
-
-    # 1. Muat gambar (resolusi optimal max 1600px)
-    img_bgr = muat_gambar(path, max_dimension=1600)
-
-    # 2. Koreksi orientasi (0, 90, 180, 270 derajat) dengan batas waktu
-    upright_bgr = koreksi_orientasi(img_bgr, reader, deadline=deadline)
-
-    # 3. Grayscale, deskew, dan CLAHE
-    gray = cv2.cvtColor(upright_bgr, cv2.COLOR_BGR2GRAY)
-    gray = luruskan(gray)
-    enhanced_gray = tingkatkan_kontras(gray)
-    img_h, img_w = enhanced_gray.shape[:2]
-
-    # 4. Tahap 1: Ekstraksi Cepat Zona Header (45% atas dokumen KK)
-    top_h = int(img_h * 0.45)
-    header_crop = enhanced_gray[:top_h, :]
-    raw_results = reader.readtext(header_crop, detail=1)
-
+def _raw_to_items(raw_results, img_w, img_h):
+    """Mengonversi hasil mentah EasyOCR menjadi list dict dengan koordinat & ukuran ternormalisasi."""
     items = []
     for bbox, text, conf in raw_results:
         t = text.strip()
@@ -559,40 +695,55 @@ def baca_kk(path, timeout=60):
             'norm_x': ((xmin + xmax) / 2.0) / img_w,
             'norm_y': ((ymin + ymax) / 2.0) / img_h,
         })
+    return items
+
+
+def baca_kk(path, timeout=60):
+    """
+    Fungsi utama OCR untuk memindai dokumen Kartu Keluarga (JPG/PNG/PDF) dengan proteksi timeout:
+    1. Memuat gambar/PDF halaman pertama dan memutar dokumen ke orientasi tegak secara cepat.
+    2. Meningkatkan kontras (CLAHE) dan meluruskan kemiringan sudut (deskew).
+    3. Ekstraksi dua tahap: memprioritaskan pemindaian zona header (45% atas) untuk kecepatan tinggi.
+    4. Mendeteksi batas atas tabel keluarga untuk memisahkan Nomor KK dari NIK anggota keluarga.
+    5. Mengidentifikasi No. KK (16 digit), Kepala Keluarga, Alamat, RT/RW, Desa/Kelurahan,
+       Kecamatan, Kabupaten/Kota, Provinsi, serta daftar anggota keluarga dari tabel.
+    6. Mencegah pemrosesan berlebih dengan batas timeout yang dapat dikonfigurasi.
+    """
+    start_time = time.time()
+    deadline = start_time + timeout
+
+    reader = get_reader()
+
+    # 1. Muat gambar atau halaman 1 PDF (resolusi optimal max 1600px)
+    img_bgr = muat_gambar(path, max_dimension=1600)
+
+    # 2. Koreksi orientasi (0, 90, 180, 270 derajat) dengan batas waktu
+    upright_bgr = koreksi_orientasi(img_bgr, reader, deadline=deadline)
+
+    # 3. Grayscale, deskew, dan CLAHE
+    gray = cv2.cvtColor(upright_bgr, cv2.COLOR_BGR2GRAY)
+    gray = luruskan(gray)
+    enhanced_gray = tingkatkan_kontras(gray)
+    img_h, img_w = enhanced_gray.shape[:2]
+
+    # 4. Tahap 1: Ekstraksi Cepat Zona Header (45% atas dokumen KK)
+    top_h = int(img_h * 0.45)
+    header_crop = enhanced_gray[:top_h, :]
+    items = _raw_to_items(reader.readtext(header_crop, detail=1), img_w, img_h)
 
     lines = susun_baris_dari_items(items)
     table_y = cari_batas_tabel(items, img_h)
     no_kk, peringatan = cari_nomor_kk(items, reader, enhanced_gray, table_y, img_h, img_w, deadline=deadline)
     kepala_keluarga = cari_kepala_keluarga(items, lines, table_y)
     alamat = cari_alamat(items, lines, table_y)
-    nik_kepala = cari_nik_kepala_keluarga(items, lines, table_y, no_kk=no_kk)
+    meta = cari_metadata_wilayah(items, lines, table_y)
+    anggota_keluarga = cari_anggota_keluarga(items, lines, table_y, no_kk=no_kk)
+    nik_kepala = anggota_keluarga[0]["nik"] if anggota_keluarga else cari_nik_kepala_keluarga(items, lines, table_y, no_kk=no_kk)
 
-    # 5. Tahap 2: Fallback ke pemindaian seluruh gambar jika No KK belum ditemukan
-    # atau NIK kepala keluarga belum tertangkap di header crop
-    if (not no_kk or not nik_kepala) and (time.time() < deadline - 5):
-        full_results = reader.readtext(enhanced_gray, detail=1)
-        items_full = []
-        for bbox, text, conf in full_results:
-            t = text.strip()
-            if not t:
-                continue
-            xs = [p[0] for p in bbox]
-            ys = [p[1] for p in bbox]
-            xmin, xmax = float(min(xs)), float(max(xs))
-            ymin, ymax = float(min(ys)), float(max(ys))
-            items_full.append({
-                'text': t,
-                'conf': float(conf),
-                'bbox': bbox,
-                'xmin': xmin, 'xmax': xmax,
-                'ymin': ymin, 'ymax': ymax,
-                'xc': (xmin + xmax) / 2.0,
-                'yc': (ymin + ymax) / 2.0,
-                'w': max(1.0, xmax - xmin),
-                'h': max(1.0, ymax - ymin),
-                'norm_x': ((xmin + xmax) / 2.0) / img_w,
-                'norm_y': ((ymin + ymax) / 2.0) / img_h,
-            })
+    # 5. Tahap 2: Fallback ke pemindaian seluruh gambar jika No KK atau anggota keluarga belum ditemukan
+    # dan masih ada sisa waktu sebelum deadline timeout
+    if (not no_kk or not anggota_keluarga) and (time.time() < deadline - 5):
+        items_full = _raw_to_items(reader.readtext(enhanced_gray, detail=1), img_w, img_h)
         lines_full = susun_baris_dari_items(items_full)
         table_y_full = cari_batas_tabel(items_full, img_h)
         if not no_kk:
@@ -601,9 +752,33 @@ def baca_kk(path, timeout=60):
             kepala_keluarga = cari_kepala_keluarga(items_full, lines_full, table_y_full)
         if not alamat:
             alamat = cari_alamat(items_full, lines_full, table_y_full)
+        meta_full = cari_metadata_wilayah(items_full, lines_full, table_y_full)
+        for mk, mv in meta_full.items():
+            if not meta[mk] and mv:
+                meta[mk] = mv
+        anggota_full = cari_anggota_keluarga(items_full, lines_full, table_y_full, no_kk=no_kk)
+        if len(anggota_full) > len(anggota_keluarga):
+            anggota_keluarga = anggota_full
         if not nik_kepala:
-            nik_kepala = cari_nik_kepala_keluarga(items_full, lines_full, table_y_full, no_kk=no_kk)
+            nik_kepala = anggota_keluarga[0]["nik"] if anggota_keluarga else cari_nik_kepala_keluarga(items_full, lines_full, table_y_full, no_kk=no_kk)
         lines = lines_full
+
+    # Pengaman akhir: Pastikan no_kk tidak sama dengan NIK anggota keluarga manapun
+    nik_set = {a["nik"] for a in anggota_keluarga}
+    if no_kk and no_kk in nik_set:
+        no_kk = ""
+        peringatan = "Nomor Kartu Keluarga (KK) tidak dapat dibedakan secara pasti dari NIK anggota keluarga. Silakan periksa dan isi 16 digit Nomor KK secara manual."
+
+    # Tambahkan notifikasi jika ada kolom penting yang belum terbaca otomatis
+    missing_fields = []
+    if not no_kk:
+        missing_fields.append("Nomor KK")
+    if not kepala_keluarga:
+        missing_fields.append("Nama Kepala Keluarga")
+    if not alamat:
+        missing_fields.append("Alamat")
+    if not peringatan and missing_fields:
+        peringatan = f"Sebagian data ({', '.join(missing_fields)}) belum terbaca otomatis dari dokumen. Silakan lengkapi secara manual sebelum menyimpan."
 
     elapsed = time.time() - start_time
     return {
@@ -611,6 +786,12 @@ def baca_kk(path, timeout=60):
         "nik": nik_kepala,
         "kepala_keluarga": kepala_keluarga,
         "alamat": alamat,
+        "rt_rw": meta["rt_rw"],
+        "desa_kelurahan": meta["desa_kelurahan"],
+        "kecamatan": meta["kecamatan"],
+        "kabupaten_kota": meta["kabupaten_kota"],
+        "provinsi": meta["provinsi"],
+        "anggota_keluarga": anggota_keluarga,
         "peringatan": peringatan,
         "raw": "\n".join(lines),
         "duration_seconds": round(elapsed, 2)

@@ -201,8 +201,182 @@
         </div>
     </div>
 
-    <!-- Right Column: Status Pengajuan Desil, Status Bansos & Katalog Program -->
+    <!-- Right Column: Dokumen KK, Status Pengajuan Desil, Status Bansos & Katalog Program -->
     <div class="col-lg-8">
+        <!-- BAGIAN BARU: Dokumen Kartu Keluarga (Mandiri Warga + OCR) -->
+        {% set st_dok = keluarga.status_dokumen if (keluarga and keluarga.status_dokumen) else 'Belum Diunggah' %}
+        <div class="card border-0 shadow-sm mb-4" id="dokumen-kk">
+            <div class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-richtext-fill text-primary"></i>
+                        <span>Dokumen Kartu Keluarga</span>
+                    </h5>
+                    <div class="small text-muted mt-0.5">Unggah foto atau PDF Kartu Keluarga Anda, jalankan OCR otomatis, lalu simpan untuk verifikasi admin</div>
+                </div>
+                <span id="kk-status-badge" class="badge rounded-pill px-3 py-1.5
+                    {% if st_dok == 'Terverifikasi' %}bg-success-subtle text-success border border-success-subtle
+                    {% elif st_dok == 'Menunggu Verifikasi' %}bg-warning-subtle text-warning border border-warning-subtle
+                    {% elif st_dok == 'Perlu Perbaikan' %}bg-danger-subtle text-danger border border-danger-subtle
+                    {% else %}bg-secondary-subtle text-secondary border border-secondary-subtle{% endif %}">
+                    {% if st_dok == 'Terverifikasi' %}<i class="bi bi-patch-check-fill me-1"></i>
+                    {% elif st_dok == 'Menunggu Verifikasi' %}<i class="bi bi-clock-history me-1"></i>
+                    {% elif st_dok == 'Perlu Perbaikan' %}<i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    {% else %}<i class="bi bi-upload me-1"></i>{% endif %}
+                    <span id="kk-status-text">{{ st_dok }}</span>
+                </span>
+            </div>
+            <div class="card-body p-4">
+                {% if keluarga and keluarga.catatan_verifikasi %}
+                <div class="alert {% if st_dok == 'Perlu Perbaikan' %}alert-danger{% else %}alert-info{% endif %} small py-2.5 px-3 mb-3">
+                    <i class="bi bi-chat-square-text-fill me-1"></i>
+                    <strong>Catatan Petugas/Admin:</strong> {{ keluarga.catatan_verifikasi }}
+                </div>
+                {% endif %}
+
+                <form id="form-kk-warga" enctype="multipart/form-data">
+                    <div class="row g-4">
+                        <!-- Panel Kiri: Upload & Preview Dokumen -->
+                        <div class="col-md-5">
+                            <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column">
+                                <label for="input-dokumen-kk" class="form-label fw-semibold small text-dark mb-2">
+                                    <i class="bi bi-cloud-arrow-up-fill text-primary me-1"></i> Upload Kartu Keluarga
+                                </label>
+                                <input type="file"
+                                       id="input-dokumen-kk"
+                                       name="dokumen_kk"
+                                       class="form-control form-control-sm mb-2"
+                                       accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+                                <div class="form-text small text-muted mb-3" style="font-size: 0.74rem;">
+                                    Format didukung: <strong>JPG, JPEG, PNG, atau PDF</strong> (Maks. 10 MB).
+                                </div>
+
+                                <!-- Preview Box -->
+                                <div id="kk-preview-container" class="border rounded-3 bg-white flex-grow-1 d-flex align-items-center justify-content-center overflow-hidden position-relative mb-3" style="min-height: 200px;">
+                                    {% set existing_doc_url = url_for('warga.lihat_dokumen_kk', keluarga_id=keluarga.id) if (keluarga and keluarga.dokumen_kk) else '' %}
+                                    {% set existing_is_pdf = (keluarga.dokumen_kk or '').lower().endswith('.pdf') if (keluarga and keluarga.dokumen_kk) else False %}
+                                    <div id="kk-preview-placeholder" class="text-center text-muted p-3 {% if existing_doc_url %}d-none{% endif %}">
+                                        <i class="bi bi-file-earmark-image fs-1 opacity-50 d-block mb-1"></i>
+                                        <div class="small">Preview dokumen KK akan tampil di sini sebelum dikirim</div>
+                                    </div>
+                                    <img id="kk-preview-img"
+                                         src="{% if existing_doc_url and not existing_is_pdf %}{{ existing_doc_url }}{% endif %}"
+                                         alt="Preview Dokumen KK"
+                                         class="img-fluid {% if not (existing_doc_url and not existing_is_pdf) %}d-none{% endif %}"
+                                         style="max-height: 240px; width: 100%; object-fit: contain;">
+                                    <iframe id="kk-preview-pdf"
+                                            src="{% if existing_doc_url and existing_is_pdf %}{{ existing_doc_url }}{% endif %}"
+                                            class="w-100 border-0 {% if not (existing_doc_url and existing_is_pdf) %}d-none{% endif %}"
+                                            style="height: 240px;"></iframe>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="button" id="btn-proses-ocr" class="btn btn-outline-primary btn-sm fw-semibold">
+                                        <i class="bi bi-magic me-1"></i> Proses OCR
+                                    </button>
+                                    {% if existing_doc_url %}
+                                    <a href="{{ existing_doc_url }}" target="_blank" class="btn btn-link btn-sm text-decoration-none p-0 small">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i>Lihat Dokumen Tersimpan
+                                    </a>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Indikator Proses Pembacaan OCR -->
+                                <div id="kk-ocr-loading" class="alert alert-info py-2 px-3 mt-3 mb-0 small d-none">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <div>
+                                            <div class="fw-semibold">Memindai dokumen KK...</div>
+                                            <div class="text-muted" style="font-size: 0.72rem;" id="kk-ocr-timer">Proses OCR berjalan (0s)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="kk-ocr-status" class="mt-2 small"></div>
+                            </div>
+                        </div>
+
+                        <!-- Panel Kanan: Hasil Pembacaan OCR (Dapat Diedit) & Tombol Simpan Data -->
+                        <div class="col-md-7">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold small text-dark"><i class="bi bi-card-list text-primary me-1"></i>Hasil Pembacaan OCR &amp; Data KK</span>
+                                <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Dapat diedit manual</span>
+                            </div>
+
+                            <div class="row g-2.5">
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold mb-1">Nomor Kartu Keluarga (16 Digit) <span class="text-danger">*</span></label>
+                                    <input type="text" id="kk-nomor" name="nomor_kk" maxlength="16" class="form-control form-control-sm font-monospace"
+                                           placeholder="16 digit No. KK" value="{{ keluarga.nomor_kk if keluarga else '' }}" required>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold mb-1">Nama Kepala Keluarga <span class="text-danger">*</span></label>
+                                    <input type="text" id="kk-kepala" name="kepala_keluarga" class="form-control form-control-sm"
+                                           placeholder="Sesuai dokumen KK" value="{{ keluarga.kepala_keluarga if keluarga else '' }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold mb-1">Alamat <span class="text-danger">*</span></label>
+                                    <input type="text" id="kk-alamat" name="alamat" class="form-control form-control-sm"
+                                           placeholder="Alamat lengkap pada KK" value="{{ keluarga.alamat if keluarga else '' }}" required>
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label small fw-semibold mb-1">RT / RW</label>
+                                    <input type="text" id="kk-rtrw" name="rt_rw" class="form-control form-control-sm"
+                                           placeholder="001/002" value="{{ keluarga.rt_rw if (keluarga and keluarga.rt_rw) else '' }}">
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="form-label small fw-semibold mb-1">Desa / Kelurahan</label>
+                                    <input type="text" id="kk-desa" name="desa_kelurahan" class="form-control form-control-sm"
+                                           placeholder="Nama Desa/Kelurahan" value="{{ keluarga.desa_kelurahan if (keluarga and keluarga.desa_kelurahan) else '' }}">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label small fw-semibold mb-1">Kecamatan</label>
+                                    <input type="text" id="kk-kec" name="kecamatan" class="form-control form-control-sm"
+                                           placeholder="Nama Kecamatan" value="{{ keluarga.kecamatan if (keluarga and keluarga.kecamatan) else '' }}">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label small fw-semibold mb-1">Kabupaten / Kota</label>
+                                    <input type="text" id="kk-kab" name="kabupaten_kota" class="form-control form-control-sm"
+                                           placeholder="Kabupaten/Kota" value="{{ keluarga.kabupaten_kota if (keluarga and keluarga.kabupaten_kota) else '' }}">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label small fw-semibold mb-1">Provinsi</label>
+                                    <input type="text" id="kk-prov" name="provinsi" class="form-control form-control-sm"
+                                           placeholder="Nama Provinsi" value="{{ keluarga.provinsi if (keluarga and keluarga.provinsi) else '' }}">
+                                </div>
+                            </div>
+
+                            <input type="hidden" id="hasil-ocr-json" name="hasil_ocr_json" value="">
+
+                            <div id="kk-save-feedback" class="mt-3 small"></div>
+
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" id="btn-simpan-kk" class="btn btn-primary btn-sm px-4 py-2 fw-semibold shadow-sm">
+                                    <i class="bi bi-save me-1"></i> Simpan Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                {% if keluarga and keluarga.riwayat_dokumen %}
+                <div class="mt-4 pt-3 border-top">
+                    <div class="small fw-bold text-muted mb-2"><i class="bi bi-clock-history me-1"></i>Riwayat Unggahan &amp; Verifikasi Dokumen KK</div>
+                    <div class="list-group list-group-flush small">
+                        {% for rv in keluarga.riwayat_dokumen|reverse %}
+                        <div class="list-group-item px-0 py-1.5 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <span class="fw-semibold text-dark">{{ rv.aksi }}</span>
+                                {% if rv.catatan %}<span class="text-muted"> — {{ rv.catatan }}</span>{% endif %}
+                            </div>
+                            <span class="text-muted font-monospace" style="font-size: 0.72rem;">{{ rv.waktu or rv.diarsipkan_pada or '' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- Status Pengajuan Perubahan Desil Saya -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -417,4 +591,201 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("input-dokumen-kk");
+    const previewImg = document.getElementById("kk-preview-img");
+    const previewPdf = document.getElementById("kk-preview-pdf");
+    const previewPlaceholder = document.getElementById("kk-preview-placeholder");
+    const btnOcr = document.getElementById("btn-proses-ocr");
+    const ocrLoading = document.getElementById("kk-ocr-loading");
+    const ocrTimer = document.getElementById("kk-ocr-timer");
+    const ocrStatus = document.getElementById("kk-ocr-status");
+    const formKK = document.getElementById("form-kk-warga");
+    const saveFeedback = document.getElementById("kk-save-feedback");
+    const btnSimpan = document.getElementById("btn-simpan-kk");
+    const hasilOcrInput = document.getElementById("hasil-ocr-json");
+
+    if (!fileInput || !formKK) return;
+
+    let previewObjectUrl = null;
+
+    // 1. Preview dokumen sebelum dikirim (JPG/JPEG/PNG atau PDF)
+    fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        ocrStatus.innerHTML = "";
+        saveFeedback.innerHTML = "";
+
+        if (!file) return;
+
+        const nameLower = file.name.toLowerCase();
+        const allowed = nameLower.endsWith(".jpg") || nameLower.endsWith(".jpeg") || nameLower.endsWith(".png") || nameLower.endsWith(".pdf");
+        if (!allowed) {
+            ocrStatus.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
+            ocrStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i> Format file tidak valid. Harap pilih file JPG, JPEG, PNG, atau PDF.';
+            this.value = "";
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            ocrStatus.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
+            ocrStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i> Ukuran file melebihi batas maksimal 10 MB.';
+            this.value = "";
+            return;
+        }
+
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+        }
+        previewObjectUrl = URL.createObjectURL(file);
+
+        previewPlaceholder.classList.add("d-none");
+        if (nameLower.endsWith(".pdf")) {
+            previewImg.classList.add("d-none");
+            previewPdf.src = previewObjectUrl;
+            previewPdf.classList.remove("d-none");
+        } else {
+            previewPdf.classList.add("d-none");
+            previewImg.src = previewObjectUrl;
+            previewImg.classList.remove("d-none");
+        }
+    });
+
+    // 2. Proses OCR ke Backend
+    btnOcr.addEventListener("click", async function () {
+        const file = fileInput.files[0];
+        if (!file) {
+            ocrStatus.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+            ocrStatus.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Silakan unggah file Kartu Keluarga (JPG/PNG/PDF) terlebih dahulu sebelum memproses OCR.';
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append("dokumen_kk", file);
+
+        let sec = 0;
+        ocrLoading.classList.remove("d-none");
+        ocrTimer.textContent = "Proses OCR berjalan (0s)";
+        const tick = setInterval(() => {
+            sec++;
+            ocrTimer.textContent = `Proses OCR berjalan (${sec}s)`;
+        }, 1000);
+
+        btnOcr.disabled = true;
+        btnSimpan.disabled = true;
+        ocrStatus.className = "mt-2 small";
+        ocrStatus.innerHTML = "";
+
+        const controller = new AbortController();
+        const timeoutTimer = setTimeout(() => controller.abort(), 65000);
+
+        try {
+            const res = await fetch("{{ url_for('warga.ocr_kk_warga') }}", {
+                method: "POST",
+                body: fd,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutTimer);
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                ocrStatus.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+                ocrStatus.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i> <strong>${data.error || 'Pembacaan OCR gagal'}</strong><div class="text-muted mt-1" style="font-size:0.75rem;">${data.peringatan || 'Anda tetap dapat mengisi dan memperbaiki seluruh kolom secara manual.'}</div>`;
+                return;
+            }
+
+            // Isi formulir yang dapat diedit dengan hasil OCR
+            if (data.no_kk) document.getElementById("kk-nomor").value = data.no_kk;
+            if (data.kepala_keluarga) document.getElementById("kk-kepala").value = data.kepala_keluarga;
+            if (data.alamat) document.getElementById("kk-alamat").value = data.alamat;
+            if (data.rt_rw) document.getElementById("kk-rtrw").value = data.rt_rw;
+            if (data.desa_kelurahan) document.getElementById("kk-desa").value = data.desa_kelurahan;
+            if (data.kecamatan) document.getElementById("kk-kec").value = data.kecamatan;
+            if (data.kabupaten_kota) document.getElementById("kk-kab").value = data.kabupaten_kota;
+            if (data.provinsi) document.getElementById("kk-prov").value = data.provinsi;
+
+            // Simpan snapshot hasil OCR lengkap untuk disimpan bersama data form
+            hasilOcrInput.value = JSON.stringify({
+                anggota_keluarga: data.anggota_keluarga || [],
+                raw: data.raw || ""
+            });
+
+            if (data.no_kk && !data.peringatan) {
+                ocrStatus.className = "alert alert-success py-2 px-3 mt-2 mb-0 small";
+                ocrStatus.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> <strong>OCR Berhasil (${data.duration_seconds || sec}s):</strong> Nomor KK <code>${data.no_kk}</code> terbaca. Silakan periksa dan edit jika perlu sebelum klik Simpan Data.`;
+            } else {
+                ocrStatus.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+                ocrStatus.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Perlu Pemeriksaan Manual:</strong> ${data.peringatan || 'Sebagian data belum terbaca sempurna. Silakan lengkapi atau perbaiki secara manual.'}`;
+            }
+        } catch (err) {
+            clearTimeout(timeoutTimer);
+            ocrStatus.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
+            if (err.name === "AbortError") {
+                ocrStatus.innerHTML = '<i class="bi bi-clock-history me-1"></i> Waktu pemrosesan OCR melebihi batas. Silakan isi data formulir secara manual.';
+            } else {
+                ocrStatus.innerHTML = `<i class="bi bi-exclamation-octagon me-1"></i> Gagal memproses OCR: ${err.message}`;
+            }
+        } finally {
+            clearInterval(tick);
+            ocrLoading.classList.add("d-none");
+            btnOcr.disabled = false;
+            btnSimpan.disabled = false;
+        }
+    });
+
+    // 3. Simpan Data Dokumen & Formulir KK ke Database
+    formKK.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        saveFeedback.innerHTML = "";
+
+        const noKK = document.getElementById("kk-nomor").value.trim();
+        if (!/^\d{16}$/.test(noKK)) {
+            saveFeedback.className = "alert alert-danger py-2 px-3 mt-3 mb-0 small";
+            saveFeedback.innerHTML = '<i class="bi bi-x-circle me-1"></i> Nomor Kartu Keluarga harus tepat 16 digit angka numerik.';
+            document.getElementById("kk-nomor").focus();
+            return;
+        }
+
+        const fd = new FormData(formKK);
+        btnSimpan.disabled = true;
+        btnSimpan.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+
+        try {
+            const res = await fetch("{{ url_for('warga.simpan_kk_warga') }}", {
+                method: "POST",
+                body: fd
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                saveFeedback.className = "alert alert-danger py-2 px-3 mt-3 mb-0 small";
+                saveFeedback.innerHTML = `<i class="bi bi-x-circle me-1"></i> ${data.error || 'Gagal menyimpan data Kartu Keluarga.'}`;
+                return;
+            }
+
+            saveFeedback.className = "alert alert-success py-2 px-3 mt-3 mb-0 small";
+            saveFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> ${data.message}`;
+
+            const statusBadge = document.getElementById("kk-status-badge");
+            const statusText = document.getElementById("kk-status-text");
+            if (statusBadge && statusText) {
+                statusBadge.className = "badge rounded-pill px-3 py-1.5 bg-warning-subtle text-warning border border-warning-subtle";
+                statusText.textContent = data.status_dokumen || "Menunggu Verifikasi";
+            }
+
+            setTimeout(() => {
+                window.location.hash = "#dokumen-kk";
+                window.location.reload();
+            }, 900);
+        } catch (err) {
+            saveFeedback.className = "alert alert-danger py-2 px-3 mt-3 mb-0 small";
+            saveFeedback.innerHTML = `<i class="bi bi-exclamation-octagon me-1"></i> Terjadi kesalahan koneksi: ${err.message}`;
+        } finally {
+            btnSimpan.disabled = false;
+            btnSimpan.innerHTML = '<i class="bi bi-save me-1"></i> Simpan Data';
+        }
+    });
+});
+</script>
 {% endblock %}
