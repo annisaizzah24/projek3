@@ -15,7 +15,7 @@ from app.verifikasi.engine import jalankan_verifikasi, AlreadyVerifiedError, Not
 
 class SociovaultTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = create_app()
+        self.app = create_app("testing")
         self.app.config["TESTING"] = True
         self.app.config["WTF_CSRF_ENABLED"] = False
         self.client = self.app.test_client()

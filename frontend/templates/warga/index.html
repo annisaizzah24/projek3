@@ -155,7 +155,7 @@
                                             data-bs-toggle="modal"
                                             data-bs-target="#kkDetailModal"
                                             data-kk-id="{{ w.keluarga.id }}">
-                                        <i class="bi bi-file-earmark-text me-1"></i>Lihat KK &amp; OCR
+                                        <i class="bi bi-file-earmark-text me-1"></i>Lihat Dokumen KK
                                     </button>
                                 </div>
                             {% endif %}
@@ -215,7 +215,7 @@
     {% endif %}
 </div>
 
-<!-- Dokumen Kartu Keluarga Unggahan Warga (OCR & Verifikasi Admin) -->
+<!-- Dokumen Kartu Keluarga Unggahan Warga (Verifikasi Admin) -->
 <div class="card border-0 shadow-sm mt-4" id="dokumen-kk-warga">
     <div class="card-header bg-white py-3.5 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
@@ -223,7 +223,7 @@
                 <i class="bi bi-file-earmark-check-fill text-primary"></i>
                 <span>Verifikasi Dokumen Kartu Keluarga (Unggahan Warga)</span>
             </h6>
-            <div class="small text-muted">Dokumen KK dan hasil pembacaan OCR yang dikirimkan langsung melalui akun warga</div>
+            <div class="small text-muted">Dokumen KK yang diunggah langsung melalui akun warga</div>
         </div>
         {% if pending_kk_count and pending_kk_count > 0 %}
             <span class="badge bg-warning text-dark rounded-pill px-3 py-1.5">
@@ -239,7 +239,7 @@
                     <tr>
                         <th class="ps-4">Akun Pengunggah</th>
                         <th>Nomor KK &amp; Kepala Keluarga</th>
-                        <th>Alamat &amp; Wilayah (Hasil OCR)</th>
+                        <th>Alamat &amp; Wilayah</th>
                         <th>Status Dokumen</th>
                         <th class="text-end pe-4">Aksi &amp; Verifikasi</th>
                     </tr>
@@ -258,9 +258,6 @@
                         <td>
                             <div class="font-monospace fw-bold text-primary">{{ k.nomor_kk }}</div>
                             <div class="small fw-semibold text-dark">{{ k.kepala_keluarga }}</div>
-                            {% if k.hasil_ocr_kk and k.hasil_ocr_kk.get('anggota_keluarga') %}
-                                <div class="small text-muted">{{ k.hasil_ocr_kk.get('anggota_keluarga')|length }} anggota terdeteksi OCR</div>
-                            {% endif %}
                         </td>
                         <td>
                             <div class="small text-dark">{{ k.alamat }}</div>
@@ -318,7 +315,6 @@
                                 "verifikasi_url": url_for('warga.verifikasi_dokumen_kk', keluarga_id=k.id),
                                 "is_pdf": (k.dokumen_kk or "").lower().endswith(".pdf"),
                                 "pemilik": (k.pemilik_akun.nama ~ " (@" ~ k.pemilik_akun.username ~ ")") if k.pemilik_akun else "Terdaftar di Master Keluarga",
-                                "anggota": (k.hasil_ocr_kk.get("anggota_keluarga", []) if k.hasil_ocr_kk else []),
                                 "riwayat": (k.riwayat_dokumen or [])
                             }|tojson }}
                             </script>
@@ -352,7 +348,7 @@
     </div>
 </div>
 
-<!-- Modal Detail & Verifikasi Dokumen KK + Hasil OCR -->
+<!-- Modal Detail & Verifikasi Dokumen KK -->
 <div class="modal fade" id="kkDetailModal" tabindex="-1" aria-labelledby="kkDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -382,7 +378,7 @@
                     </div>
                     <div class="col-lg-6">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-semibold small text-muted">Data Kartu Keluarga &amp; Hasil OCR</span>
+                            <span class="fw-semibold small text-muted">Data Kartu Keluarga</span>
                             <span id="kkModalStatusBadge" class="badge rounded-pill">-</span>
                         </div>
                         <div class="border rounded-3 p-3 bg-light mb-3 small">
@@ -419,18 +415,6 @@
                                     <div class="text-muted">Provinsi:</div>
                                     <div class="fw-semibold" id="kkModalProv">-</div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div id="kkModalAnggotaBox" class="mb-3 d-none">
-                            <div class="fw-semibold small text-muted mb-1">Anggota Keluarga Terdeteksi OCR</div>
-                            <div class="table-responsive border rounded-3" style="max-height: 150px;">
-                                <table class="table table-sm mb-0 small">
-                                    <thead class="table-light">
-                                        <tr><th>No</th><th>Nama</th><th>NIK</th></tr>
-                                    </thead>
-                                    <tbody id="kkModalAnggotaBody"></tbody>
-                                </table>
                             </div>
                         </div>
 
@@ -524,20 +508,6 @@
                     }
                 } else {
                     noFileEl.classList.remove("d-none");
-                }
-
-                const angBox = document.getElementById("kkModalAnggotaBox");
-                const angBody = document.getElementById("kkModalAnggotaBody");
-                angBody.innerHTML = "";
-                if (d.anggota && d.anggota.length > 0) {
-                    d.anggota.forEach((a, idx) => {
-                        const tr = document.createElement("tr");
-                        tr.innerHTML = `<td>${a.no || idx + 1}</td><td>${a.nama || "-"}</td><td class="font-monospace">${a.nik || "-"}</td>`;
-                        angBody.appendChild(tr);
-                    });
-                    angBox.classList.remove("d-none");
-                } else {
-                    angBox.classList.add("d-none");
                 }
             });
         });

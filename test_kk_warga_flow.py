@@ -12,14 +12,13 @@ from app.models import User, Keluarga
 
 
 class TestKKWargaFlow(unittest.TestCase):
-    """Pengujian terintegrasi pemindahan fitur Unggah KK + OCR ke Akun Warga & Verifikasi Admin."""
+    """Pengujian terintegrasi fitur Unggah KK Manual di Akun Warga & Verifikasi Admin tanpa OCR."""
 
     @classmethod
     def setUpClass(cls):
-        cls.app = create_app()
+        cls.app = create_app("testing")
         cls.app.config["TESTING"] = True
         cls.app.config["WTF_CSRF_ENABLED"] = False
-        cls.sample_jpg = os.path.abspath("uploads/temp/fd010b8c328d472d9b2e8cb3112d2ee3.jpg")
 
     def setUp(self):
         self.client = self.app.test_client()
@@ -67,6 +66,7 @@ class TestKKWargaFlow(unittest.TestCase):
         - Tombol + Kartu Keluarga tidak ada di Admin -> Data Warga.
         - Tombol + Tambah Warga tetap ada.
         - Bagian 'Dokumen Kartu Keluarga' tersedia di halaman Akun Warga (/dashboard).
+        - Tombol 'Proses OCR' TIDAK ADA pada tampilan.
         """
         self._login("admin_uji", "admin123")
         res_admin = self.client.get("/warga")
@@ -82,70 +82,47 @@ class TestKKWargaFlow(unittest.TestCase):
         html_warga = res_warga.get_data(as_text=True)
         self.assertEqual(res_warga.status_code, 200)
         self.assertIn("Dokumen Kartu Keluarga", html_warga)
-        self.assertIn("Proses OCR", html_warga)
+        self.assertNotIn("Proses OCR", html_warga)
+        self.assertNotIn("Scan & Isi Otomatis", html_warga)
         self.assertIn("Simpan Data", html_warga)
         self.assertIn("Belum Diunggah", html_warga)
+        self._logout()
 
-    def test_3_4_5_6_ocr_jpg_png_pdf_dan_no_kk_bukan_nik(self):
+    def test_3_4_5_6_endpoint_ocr_dihapus_dan_validasi_upload_manual(self):
         """
         Uji #3, #4, #5, #6:
-        - Upload JPG, PNG, dan PDF ke endpoint OCR (/akun/kk/ocr).
-        - OCR berjalan nyata dan membaca No. KK (6303082609160005), BUKAN NIK anggota keluarga.
-        - Mengenali metadata wilayah & daftar anggota keluarga.
+        - Endpoint OCR (/akun/kk/ocr dan /keluarga/ocr) sudah dihapus dan merespons 404.
+        - Pengunggahan berkas manual menolak format tidak sah (misal .txt).
+        - Pengisian data KK manual berhasil dengan berkas dokumen sah.
         """
-        if not os.path.exists(self.sample_jpg):
-            self.skipTest("Sampel foto KK tidak ditemukan.")
-
         self._login("warga_a", "warga123")
 
-        img = Image.open(self.sample_jpg).convert("RGB")
+        # Endpoint OCR sudah dihapus (404)
+        res_ocr = self.client.post("/akun/kk/ocr", data={})
+        self.assertEqual(res_ocr.status_code, 404)
+        res_ocr2 = self.client.post("/keluarga/ocr", data={})
+        self.assertEqual(res_ocr2.status_code, 404)
 
-        # Uji JPG
-        with open(self.sample_jpg, "rb") as f:
-            res_jpg = self.client.post(
-                "/akun/kk/ocr",
-                data={"dokumen_kk": (f, "kk_test.jpg")},
-                content_type="multipart/form-data"
-            )
-        self.assertEqual(res_jpg.status_code, 200)
-        data_jpg = res_jpg.get_json()
-        self.assertEqual(data_jpg["no_kk"], "6303082609160005")
-        self.assertNotIn(data_jpg["no_kk"], ["6303084107670277", "6303082805930002", "6303082702970004"])
-        self.assertEqual(data_jpg["kepala_keluarga"], "RUSTANIAH")
-        self.assertIn("BATU BALIAN", data_jpg["alamat"])
-        self.assertTrue(len(data_jpg.get("anggota_keluarga", [])) >= 1)
-
-        # Uji PNG
-        png_buf = io.BytesIO()
-        img.save(png_buf, format="PNG")
-        png_buf.seek(0)
-        res_png = self.client.post(
-            "/akun/kk/ocr",
-            data={"dokumen_kk": (png_buf, "kk_test.png")},
+        # Uji upload manual berkas tidak sah
+        txt_buf = io.BytesIO(b"file teks tidak sah")
+        res_bad = self.client.post(
+            "/akun/kk/simpan",
+            data={
+                "nomor_kk": "6303082609160005",
+                "kepala_keluarga": "RUSTANIAH",
+                "alamat": "DESA BATU BALIAN",
+                "dokumen_kk": (txt_buf, "dokumen.txt")
+            },
             content_type="multipart/form-data"
         )
-        self.assertEqual(res_png.status_code, 200)
-        data_png = res_png.get_json()
-        self.assertEqual(data_png["no_kk"], "6303082609160005")
-
-        # Uji PDF
-        pdf_buf = io.BytesIO()
-        img.save(pdf_buf, format="PDF")
-        pdf_buf.seek(0)
-        res_pdf = self.client.post(
-            "/akun/kk/ocr",
-            data={"dokumen_kk": (pdf_buf, "kk_test.pdf")},
-            content_type="multipart/form-data"
-        )
-        self.assertEqual(res_pdf.status_code, 200)
-        data_pdf = res_pdf.get_json()
-        self.assertEqual(data_pdf["no_kk"], "6303082609160005")
-        self.assertEqual(data_pdf["provinsi"], "KALIMANTAN SELATAN")
+        self.assertEqual(res_bad.status_code, 400)
+        self.assertIn("Format file tidak didukung", res_bad.get_json()["error"])
+        self._logout()
 
     def test_7_8_9_10_11_simpan_admin_verifikasi_riwayat_dan_keamanan(self):
         """
         Uji #7, #8, #9, #10, #11:
-        - Edit hasil OCR lalu simpan ke database oleh Warga A.
+        - Pengisian data manual KK lalu simpan ke database oleh Warga A.
         - Dokumen muncul di halaman Admin (/warga).
         - Admin melakukan verifikasi (Perlu Perbaikan -> Warga A upload ulang -> Terverifikasi)
           dan riwayat verifikasi sebelumnya tidak hilang.
@@ -153,29 +130,23 @@ class TestKKWargaFlow(unittest.TestCase):
         """
         self._login("warga_a", "warga123")
 
-        # Buat gambar PNG valid kecil sebagai dokumen upload
+        # Buat gambar PNG valid kecil sebagai dokumen upload manual
         img_buf = io.BytesIO()
         Image.new("RGB", (200, 120), color=(255, 255, 255)).save(img_buf, format="PNG")
         img_buf.seek(0)
 
-        ocr_snapshot = json.dumps({
-            "anggota_keluarga": [{"no": 1, "nama": "RUSTANIAH", "nik": "6303084107670277"}],
-            "raw": "KARTU KELUARGA No. 6303082609160005"
-        })
-
-        # Simpan dengan data yang diedit oleh warga
+        # Simpan dengan data manual oleh warga
         res_save = self.client.post(
             "/akun/kk/simpan",
             data={
                 "nomor_kk": "6303082609160005",
-                "kepala_keluarga": "RUSTANIAH (Edited)",
+                "kepala_keluarga": "RUSTANIAH (Manual)",
                 "alamat": "DESA BATU BALIAN NO 3B",
                 "rt_rw": "003/001",
                 "desa_kelurahan": "BATU BALIAN",
                 "kecamatan": "SIMPANG EMPAT",
                 "kabupaten_kota": "BANJAR",
                 "provinsi": "KALIMANTAN SELATAN",
-                "hasil_ocr_json": ocr_snapshot,
                 "dokumen_kk": (img_buf, "kk_a.png")
             },
             content_type="multipart/form-data"
@@ -190,7 +161,7 @@ class TestKKWargaFlow(unittest.TestCase):
             kk = db.session.get(Keluarga, kk_id)
             self.assertIsNotNone(kk)
             self.assertEqual(kk.id_user, self.warga_a_id)
-            self.assertEqual(kk.kepala_keluarga, "RUSTANIAH (Edited)")
+            self.assertEqual(kk.kepala_keluarga, "RUSTANIAH (Manual)")
             self.assertEqual(kk.rt_rw, "003/001")
             self.assertIsNotNone(kk.dokumen_kk)
             self.created_files.append(kk.dokumen_kk)
@@ -228,7 +199,7 @@ class TestKKWargaFlow(unittest.TestCase):
         res_admin_list = self.client.get("/warga")
         html_admin = res_admin_list.get_data(as_text=True)
         self.assertIn("6303082609160005", html_admin)
-        self.assertIn("RUSTANIAH (Edited)", html_admin)
+        self.assertIn("RUSTANIAH (Manual)", html_admin)
 
         res_admin_doc = self.client.get(f"/keluarga/dokumen/{kk_id}")
         self.assertEqual(res_admin_doc.status_code, 200)

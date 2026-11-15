@@ -14,7 +14,6 @@ from app.extensions import db
 from app.forms import WargaForm, KeluargaForm
 from app.auth.routes import role_required
 from app.desil.routes import simpan_berkas_unggah
-from app.ocr_kk import baca_kk
 
 # =============================================================================
 # 1. DAFTAR WARGA: GET /warga (Search NIK/Nama & Filter Keluarga & Filter Desil)
@@ -416,7 +415,7 @@ def hapus_warga(id):
 
 
 # =============================================================================
-# 5. UNGGAH, OCR, & VERIFIKASI DOKUMEN KARTU KELUARGA (SELF-SERVICE WARGA)
+# 5. UNGGAH & VERIFIKASI DOKUMEN KARTU KELUARGA (SELF-SERVICE WARGA)
 # =============================================================================
 UPLOAD_DIR = "uploads/temp"
 KK_STORAGE_DIR = "uploads/kk"
@@ -425,10 +424,6 @@ os.makedirs(KK_STORAGE_DIR, exist_ok=True)
 
 ALLOWED_KK_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
 MAX_KK_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
-OCR_TIMEOUT_SECONDS = int(os.environ.get("OCR_TIMEOUT_SECONDS", 60))
-_ocr_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ocr_worker")
 
 
 def _validate_kk_file(file_storage):
@@ -460,43 +455,6 @@ def _validate_kk_file(file_storage):
     return True, "", ext
 
 
-def _run_ocr_for_user(file_storage, user_id):
-    """Simpan sementara berkas berdasar user_id, jalankan OCR, dan bersihkan berkas sementara."""
-    ok, err_msg, ext = _validate_kk_file(file_storage)
-    if not ok:
-        return {"error": err_msg}, 400
-
-    temp_path = os.path.join(UPLOAD_DIR, f"u{user_id}_{uuid.uuid4().hex}{ext}")
-    file_storage.save(temp_path)
-    try:
-        future = _ocr_executor.submit(baca_kk, temp_path, timeout=OCR_TIMEOUT_SECONDS)
-        hasil = future.result(timeout=OCR_TIMEOUT_SECONDS)
-        hasil["user_id"] = user_id
-        return hasil, 200
-    except FuturesTimeoutError:
-        return {
-            "error": f"Waktu pemrosesan OCR melebihi batas ({OCR_TIMEOUT_SECONDS} detik). Silakan lengkapi data secara manual.",
-            "timeout": True,
-            "no_kk": "",
-            "kepala_keluarga": "",
-            "alamat": "",
-            "rt_rw": "",
-            "desa_kelurahan": "",
-            "kecamatan": "",
-            "kabupaten_kota": "",
-            "provinsi": "",
-            "anggota_keluarga": [],
-            "peringatan": "Pemrosesan OCR memakan waktu terlalu lama. Anda tetap dapat mengisi atau memperbaiki data secara manual."
-        }, 408
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        return {"error": f"Gagal membaca dokumen: {exc}"}, 500
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
-
 @warga_bp.route("/keluarga/tambah", methods=["GET", "POST"])
 @login_required
 def tambah_keluarga():
@@ -507,30 +465,11 @@ def tambah_keluarga():
     return redirect(url_for("warga.daftar_warga"))
 
 
-@warga_bp.route("/akun/kk/ocr", methods=["POST"])
-@login_required
-@role_required("warga")
-def ocr_kk_warga():
-    """Endpoint OCR Kartu Keluarga khusus akun warga yang sedang login."""
-    file = request.files.get("dokumen_kk") or request.files.get("foto_kk")
-    payload, status_code = _run_ocr_for_user(file, current_user.id)
-    return jsonify(payload), status_code
-
-
-@warga_bp.route("/keluarga/ocr", methods=["POST"])
-@login_required
-def ocr_kk_route():
-    """Endpoint OCR kompatibel yang terikat ke akun pengguna yang sedang login."""
-    file = request.files.get("foto_kk") or request.files.get("dokumen_kk")
-    payload, status_code = _run_ocr_for_user(file, current_user.id)
-    return jsonify(payload), status_code
-
-
 @warga_bp.route("/akun/kk/simpan", methods=["POST"])
 @login_required
 @role_required("warga")
 def simpan_kk_warga():
-    """Menyimpan dokumen KK (JPG/PNG/PDF) dan data hasil OCR/edit milik akun warga yang sedang login."""
+    """Menyimpan dokumen KK (JPG/PNG/PDF) dan data keluarga milik akun warga yang sedang login."""
     nomor_kk = (request.form.get("nomor_kk") or "").strip()
     kepala_keluarga = (request.form.get("kepala_keluarga") or "").strip()
     alamat = (request.form.get("alamat") or "").strip()
@@ -539,7 +478,6 @@ def simpan_kk_warga():
     kecamatan = (request.form.get("kecamatan") or "").strip()
     kabupaten_kota = (request.form.get("kabupaten_kota") or "").strip()
     provinsi = (request.form.get("provinsi") or "").strip()
-    hasil_ocr_raw = request.form.get("hasil_ocr_json") or ""
 
     if not re.match(r"^\d{16}$", nomor_kk):
         return jsonify({"success": False, "error": "Nomor KK harus tepat 16 digit angka numerik."}), 400
@@ -585,29 +523,6 @@ def simpan_kk_warga():
         file.save(dest_abs)
         saved_rel_path = f"uploads/kk/{unique_name}"
 
-    # Susun data hasil OCR untuk disimpan ke kolom JSON database
-    try:
-        ocr_parsed = json.loads(hasil_ocr_raw) if hasil_ocr_raw.strip() else {}
-        if not isinstance(ocr_parsed, dict):
-            ocr_parsed = {}
-    except Exception:
-        ocr_parsed = {}
-
-    ocr_record = {
-        "no_kk": nomor_kk,
-        "kepala_keluarga": kepala_keluarga,
-        "alamat": alamat,
-        "rt_rw": rt_rw,
-        "desa_kelurahan": desa_kelurahan,
-        "kecamatan": kecamatan,
-        "kabupaten_kota": kabupaten_kota,
-        "provinsi": provinsi,
-        "anggota_keluarga": ocr_parsed.get("anggota_keluarga", []),
-        "raw": ocr_parsed.get("raw", ""),
-        "disimpan_oleh_user_id": current_user.id,
-        "diperbarui_pada": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    }
-
     try:
         if existing_kk:
             riwayat = list(existing_kk.riwayat_dokumen or [])
@@ -633,7 +548,7 @@ def simpan_kk_warga():
             existing_kk.provinsi = provinsi or None
             existing_kk.id_user = current_user.id
             existing_kk.dokumen_kk = saved_rel_path
-            existing_kk.hasil_ocr_kk = ocr_record
+            existing_kk.hasil_ocr_kk = None
             existing_kk.status_dokumen = "Menunggu Verifikasi"
             existing_kk.catatan_verifikasi = None
             existing_kk.riwayat_dokumen = riwayat
@@ -650,7 +565,7 @@ def simpan_kk_warga():
                 provinsi=provinsi or None,
                 id_user=current_user.id,
                 dokumen_kk=saved_rel_path,
-                hasil_ocr_kk=ocr_record,
+                hasil_ocr_kk=None,
                 status_dokumen="Menunggu Verifikasi",
                 riwayat_dokumen=[{
                     "aksi": "Unggahan Pertama Dokumen KK oleh Warga",
@@ -720,7 +635,7 @@ def verifikasi_dokumen_kk(keluarga_id):
     elif aksi == "perlu_perbaikan":
         status_baru = "Perlu Perbaikan"
         if not catatan:
-            catatan = "Dokumen atau data hasil OCR kurang jelas/tidak sesuai. Silakan unggah ulang atau perbaiki data."
+            catatan = "Dokumen atau data Kartu Keluarga kurang jelas/tidak sesuai. Silakan unggah ulang atau perbaiki data."
     else:
         flash("Status verifikasi dokumen KK tidak valid.", "danger")
         return redirect(url_for("warga.daftar_warga"))

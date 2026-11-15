@@ -227,7 +227,7 @@ class Keluarga(db.Model):
     kepala_keluarga = Column(String(100), nullable=False)
     alamat = Column(Text, nullable=False)
 
-    # Atribut wilayah, unggahan dokumen KK mandiri warga, hasil OCR & status verifikasi
+    # Atribut wilayah, unggahan dokumen KK mandiri warga, & status verifikasi
     id_user = Column(
         Integer,
         ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
@@ -240,7 +240,7 @@ class Keluarga(db.Model):
     kabupaten_kota = Column(String(100), nullable=True)
     provinsi = Column(String(100), nullable=True)
     dokumen_kk = Column(String(255), nullable=True, comment="Path file dokumen KK (JPG/PNG/PDF)")
-    hasil_ocr_kk = Column(JSON, nullable=True, comment="Hasil pembacaan OCR lengkap & daftar anggota keluarga")
+    hasil_ocr_kk = Column(JSON, nullable=True, comment="Kolom warisan/legacy nullable")
     status_dokumen = Column(
         String(30),
         nullable=False,

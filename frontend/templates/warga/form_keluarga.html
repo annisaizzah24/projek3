@@ -27,21 +27,6 @@
                     {{ form.hidden_tag() }}
                     {{ form.hidden_tag() }}
 
-<!-- BARU: scan KK -->
-<div class="mb-4 p-3 border rounded-3 bg-light">
-    <label for="foto_kk" class="form-label fw-semibold">
-        <i class="bi bi-camera me-1 text-primary"></i>Scan Kartu Keluarga (opsional)
-    </label>
-    <input type="file" id="foto_kk" class="form-control mb-2" accept="image/png, image/jpeg">
-    <button type="button" id="btn-scan" class="btn btn-outline-primary btn-sm">
-        <i class="bi bi-magic me-1"></i> Scan & Isi Otomatis
-    </button>
-    <div id="status-ocr" class="form-text mt-2"></div>
-</div>
-
-<!-- LAMA: blok Nomor KK dst. -->
-<div class="mb-3">
-
                     <div class="mb-3">
                         <label for="{{ form.nomor_kk.id }}" class="form-label">
                             <i class="bi bi-card-text me-1 text-primary"></i>{{ form.nomor_kk.label.text }} <span class="text-danger fw-bold">*</span>
@@ -59,12 +44,12 @@
                         <label for="{{ form.nik_kepala_keluarga.id }}" class="form-label">
                             <i class="bi bi-person-badge me-1 text-primary"></i>{{ form.nik_kepala_keluarga.label.text }}
                         </label>
-                        {{ form.nik_kepala_keluarga(class_="form-control font-monospace" + (" is-invalid" if form.nik_kepala_keluarga.errors else ""), placeholder="16 digit NIK Kepala Keluarga (otomatis terisi dari scan)", maxlength="16") }}
+                        {{ form.nik_kepala_keluarga(class_="form-control font-monospace" + (" is-invalid" if form.nik_kepala_keluarga.errors else ""), placeholder="16 digit NIK Kepala Keluarga (opsional)", maxlength="16") }}
                         {% for error in form.nik_kepala_keluarga.errors %}
                             <div class="invalid-feedback d-block">{{ error }}</div>
                         {% endfor %}
                         <div class="form-text mt-1 text-muted">
-                            <i class="bi bi-info-circle me-1"></i>Opsional / otomatis terisi dari scan baris pertama KK.
+                            <i class="bi bi-info-circle me-1"></i>Opsional / 16 digit NIK Kepala Keluarga.
                         </div>
                     </div>
 
@@ -99,106 +84,4 @@
         </div>
     </div>
 </div>
-<script>
-document.getElementById("btn-scan").addEventListener("click", async () => {
-    const fileInput = document.getElementById("foto_kk");
-    const file = fileInput.files[0];
-    const status = document.getElementById("status-ocr");
-    const btn = document.getElementById("btn-scan");
-
-    if (!file) {
-        status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
-        status.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Silakan pilih berkas foto KK terlebih dahulu.';
-        return;
-    }
-
-    const fd = new FormData();
-    fd.append("foto_kk", file);
-
-    const csrf = document.querySelector('input[name="csrf_token"]');
-    if (csrf) fd.append("csrf_token", csrf.value);
-
-    status.className = "alert alert-info py-2 px-3 mt-2 mb-0 small";
-    status.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Sedang memproses dokumen KK dan mendeteksi nomor KK header (maks. 1 menit)... Mohon tunggu.';
-    btn.disabled = true;
-
-    // Timeout client-side 65 detik untuk memberi kelonggaran server menyelesaikan proses 60 detik
-    const controller = new AbortController();
-    const timeoutTimer = setTimeout(() => controller.abort(), 65000);
-
-    try {
-        const res = await fetch("{{ url_for('warga.ocr_kk_route') }}", {
-            method: "POST",
-            body: fd,
-            signal: controller.signal
-        });
-        clearTimeout(timeoutTimer);
-        const data = await res.json();
-
-        if (data.timeout) {
-            status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
-            status.innerHTML = `<i class="bi bi-clock-history me-1 text-warning"></i> <strong>${data.error}</strong><br><span class="text-muted small">${data.peringatan || 'Silakan lengkapi nomor KK dan data keluarga secara manual di form bawah.'}</span>`;
-            document.getElementById("nomor_kk").focus();
-            return;
-        }
-
-        if (data.error) {
-            status.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
-            status.innerHTML = '<i class="bi bi-x-circle me-1"></i> ' + data.error;
-            return;
-        }
-
-        if (!data.no_kk && !data.kepala_keluarga && !data.alamat) {
-            status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
-            status.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> Teks KK tidak terbaca. Pastikan foto cukup terang, rata, dan jelas atau isi formulir secara manual.';
-            return;
-        }
-
-        // Isi form dengan hasil OCR yang terverifikasi
-        document.getElementById("nomor_kk").value = data.no_kk || "";
-        if (document.getElementById("nik_kepala_keluarga")) {
-            document.getElementById("nik_kepala_keluarga").value = data.nik || "";
-        }
-        document.getElementById("kepala_keluarga").value = data.kepala_keluarga || "";
-        document.getElementById("alamat").value = data.alamat || "";
-
-        if (data.no_kk) {
-            status.className = "alert alert-success py-2 px-3 mt-2 mb-0 small";
-            const waktuInfo = data.duration_seconds ? ` (${data.duration_seconds}s)` : '';
-            let msg = `<i class="bi bi-check-circle-fill me-1 text-success"></i> <strong>Nomor KK Terdeteksi (${data.no_kk})</strong>${waktuInfo} dari header dokumen. Silakan periksa kembali sebelum menyimpan.`;
-            const belum = [];
-            if (!data.nik) belum.push("NIK Kepala Keluarga");
-            if (!data.kepala_keluarga) belum.push("Nama Kepala Keluarga");
-            if (!data.alamat) belum.push("Alamat");
-            if (belum.length) {
-                msg += `<div class="mt-1 text-muted small"><i class="bi bi-info-circle me-1"></i>Catatan: ${belum.join(" dan ")} belum terbaca otomatis, silakan lengkapi manual.</div>`;
-            }
-            if (data.peringatan) {
-                msg += `<div class="mt-1 text-warning small">${data.peringatan}</div>`;
-            }
-            status.innerHTML = msg;
-        } else {
-            status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
-            let msg = '<i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> <strong>Nomor KK belum teridentifikasi pasti dari header.</strong> Silakan masukkan 16 digit Nomor KK secara manual.';
-            if (data.peringatan) {
-                msg += `<div class="mt-1 text-muted small">${data.peringatan}</div>`;
-            }
-            status.innerHTML = msg;
-            document.getElementById("nomor_kk").focus();
-        }
-    } catch (e) {
-        clearTimeout(timeoutTimer);
-        console.error(e);
-        status.className = "alert alert-warning py-2 px-3 mt-2 mb-0 small";
-        if (e.name === "AbortError") {
-            status.innerHTML = '<i class="bi bi-clock-history me-1 text-warning"></i> <strong>Waktu pemrosesan OCR melebihi batas (Timeout 1 menit).</strong> Sistem dialihkan ke mode pengisian manual. Silakan isi form di bawah.';
-        } else {
-            status.innerHTML = '<i class="bi bi-exclamation-octagon me-1 text-danger"></i> Gagal memproses gambar: ' + e.message;
-        }
-        document.getElementById("nomor_kk").focus();
-    } finally {
-        btn.disabled = false;
-    }
-});
-</script>
 {% endblock %}
