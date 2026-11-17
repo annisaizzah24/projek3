@@ -122,7 +122,7 @@
                 <div class="mb-2 pb-2 border-bottom">
                     <div class="text-muted small">Kartu Keluarga (KK):</div>
                     <div class="fw-semibold text-dark">{{ warga.keluarga.nomor_kk }}</div>
-                    <div class="small text-muted">Kepala Keluarga: {{ warga.keluarga.kepala_keluarga }}</div>
+                    <div class="small text-muted">Kepala Keluarga: {{ warga.keluarga.kepala_keluarga }}{% if warga.keluarga.nik_kepala_keluarga %} · <span class="font-monospace">NIK: {{ warga.keluarga.nik_kepala_keluarga }}</span>{% endif %}</div>
                 </div>
                 <div class="mb-3 pb-2 border-bottom">
                     <div class="text-muted small">Alamat Domisili:</div>
@@ -295,6 +295,11 @@
                                            placeholder="16 digit No. KK" value="{{ keluarga.nomor_kk if keluarga else '' }}" required>
                                 </div>
                                 <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold mb-1">NIK Kepala Keluarga (16 Digit)</label>
+                                    <input type="text" id="kk-nik-kepala" name="nik_kepala_keluarga" maxlength="16" class="form-control form-control-sm font-monospace"
+                                           placeholder="16 digit NIK Kepala Keluarga" value="{{ keluarga.nik_kepala_keluarga if (keluarga and keluarga.nik_kepala_keluarga) else '' }}">
+                                </div>
+                                <div class="col-12">
                                     <label class="form-label small fw-semibold mb-1">Nama Kepala Keluarga <span class="text-danger">*</span></label>
                                     <input type="text" id="kk-kepala" name="kepala_keluarga" class="form-control form-control-sm"
                                            placeholder="Sesuai dokumen KK" value="{{ keluarga.kepala_keluarga if keluarga else '' }}" required>
@@ -647,6 +652,15 @@ document.addEventListener("DOMContentLoaded", function () {
             saveFeedback.className = "alert alert-danger py-2 px-3 mt-3 mb-0 small";
             saveFeedback.innerHTML = '<i class="bi bi-x-circle me-1"></i> Nomor Kartu Keluarga harus tepat 16 digit angka numerik.';
             document.getElementById("kk-nomor").focus();
+            return;
+        }
+
+        const nikKepalaEl = document.getElementById("kk-nik-kepala");
+        const nikKepala = nikKepalaEl ? nikKepalaEl.value.trim() : "";
+        if (nikKepala && !/^\d{16}$/.test(nikKepala)) {
+            saveFeedback.className = "alert alert-danger py-2 px-3 mt-3 mb-0 small";
+            saveFeedback.innerHTML = '<i class="bi bi-x-circle me-1"></i> NIK Kepala Keluarga harus tepat 16 digit angka numerik.';
+            nikKepalaEl.focus();
             return;
         }
 

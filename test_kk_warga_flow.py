@@ -140,6 +140,7 @@ class TestKKWargaFlow(unittest.TestCase):
             "/akun/kk/simpan",
             data={
                 "nomor_kk": "6303082609160005",
+                "nik_kepala_keluarga": "6303084107670277",
                 "kepala_keluarga": "RUSTANIAH (Manual)",
                 "alamat": "DESA BATU BALIAN NO 3B",
                 "rt_rw": "003/001",
@@ -161,6 +162,7 @@ class TestKKWargaFlow(unittest.TestCase):
             kk = db.session.get(Keluarga, kk_id)
             self.assertIsNotNone(kk)
             self.assertEqual(kk.id_user, self.warga_a_id)
+            self.assertEqual(kk.nik_kepala_keluarga, "6303084107670277")
             self.assertEqual(kk.kepala_keluarga, "RUSTANIAH (Manual)")
             self.assertEqual(kk.rt_rw, "003/001")
             self.assertIsNotNone(kk.dokumen_kk)

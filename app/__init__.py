@@ -17,6 +17,7 @@ def _ensure_keluarga_schema():
         json_type = "JSON" if dialect == "mysql" else "TEXT"
         needed = [
             ("id_user", "INTEGER NULL"),
+            ("nik_kepala_keluarga", "VARCHAR(16) NULL"),
             ("rt_rw", "VARCHAR(20) NULL"),
             ("desa_kelurahan", "VARCHAR(100) NULL"),
             ("kecamatan", "VARCHAR(100) NULL"),

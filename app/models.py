@@ -224,6 +224,7 @@ class Keluarga(db.Model):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     nomor_kk = Column(String(16), unique=True, nullable=False, index=True)
+    nik_kepala_keluarga = Column(String(16), nullable=True, comment="NIK Kepala Keluarga (16 digit)")
     kepala_keluarga = Column(String(100), nullable=False)
     alamat = Column(Text, nullable=False)
 

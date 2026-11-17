@@ -471,6 +471,7 @@ def tambah_keluarga():
 def simpan_kk_warga():
     """Menyimpan dokumen KK (JPG/PNG/PDF) dan data keluarga milik akun warga yang sedang login."""
     nomor_kk = (request.form.get("nomor_kk") or "").strip()
+    nik_kepala_keluarga = (request.form.get("nik_kepala_keluarga") or "").strip()
     kepala_keluarga = (request.form.get("kepala_keluarga") or "").strip()
     alamat = (request.form.get("alamat") or "").strip()
     rt_rw = (request.form.get("rt_rw") or "").strip()
@@ -481,6 +482,8 @@ def simpan_kk_warga():
 
     if not re.match(r"^\d{16}$", nomor_kk):
         return jsonify({"success": False, "error": "Nomor KK harus tepat 16 digit angka numerik."}), 400
+    if nik_kepala_keluarga and not re.match(r"^\d{16}$", nik_kepala_keluarga):
+        return jsonify({"success": False, "error": "NIK Kepala Keluarga harus tepat 16 digit angka numerik."}), 400
     if not kepala_keluarga:
         return jsonify({"success": False, "error": "Nama Kepala Keluarga wajib diisi."}), 400
     if not alamat:
@@ -539,6 +542,7 @@ def simpan_kk_warga():
                 })
 
             existing_kk.nomor_kk = nomor_kk
+            existing_kk.nik_kepala_keluarga = nik_kepala_keluarga or None
             existing_kk.kepala_keluarga = kepala_keluarga
             existing_kk.alamat = alamat
             existing_kk.rt_rw = rt_rw or None
@@ -556,6 +560,7 @@ def simpan_kk_warga():
         else:
             keluarga_obj = Keluarga(
                 nomor_kk=nomor_kk,
+                nik_kepala_keluarga=nik_kepala_keluarga or None,
                 kepala_keluarga=kepala_keluarga,
                 alamat=alamat,
                 rt_rw=rt_rw or None,

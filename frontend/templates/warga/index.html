@@ -258,6 +258,9 @@
                         <td>
                             <div class="font-monospace fw-bold text-primary">{{ k.nomor_kk }}</div>
                             <div class="small fw-semibold text-dark">{{ k.kepala_keluarga }}</div>
+                            {% if k.nik_kepala_keluarga %}
+                                <div class="small text-muted font-monospace" style="font-size: 0.72rem;">NIK: {{ k.nik_kepala_keluarga }}</div>
+                            {% endif %}
                         </td>
                         <td>
                             <div class="small text-dark">{{ k.alamat }}</div>
@@ -301,6 +304,7 @@
                             {{ {
                                 "id": k.id,
                                 "nomor_kk": k.nomor_kk,
+                                "nik_kepala_keluarga": k.nik_kepala_keluarga or "-",
                                 "kepala_keluarga": k.kepala_keluarga,
                                 "alamat": k.alamat,
                                 "rt_rw": k.rt_rw or "-",
@@ -388,6 +392,10 @@
                                     <div class="font-monospace fw-bold text-primary fs-6" id="kkModalNoKK">-</div>
                                 </div>
                                 <div class="col-sm-6">
+                                    <div class="text-muted">NIK Kepala Keluarga:</div>
+                                    <div class="font-monospace fw-semibold text-dark" id="kkModalNikKepala">-</div>
+                                </div>
+                                <div class="col-12">
                                     <div class="text-muted">Kepala Keluarga:</div>
                                     <div class="fw-bold text-dark" id="kkModalKepala">-</div>
                                 </div>
@@ -468,6 +476,7 @@
 
                 document.getElementById("kkModalSubtitle").textContent = "Pengunggah: " + d.pemilik;
                 document.getElementById("kkModalNoKK").textContent = d.nomor_kk || "-";
+                document.getElementById("kkModalNikKepala").textContent = d.nik_kepala_keluarga || "-";
                 document.getElementById("kkModalKepala").textContent = d.kepala_keluarga || "-";
                 document.getElementById("kkModalAlamat").textContent = d.alamat || "-";
                 document.getElementById("kkModalRtRw").textContent = d.rt_rw || "-";
