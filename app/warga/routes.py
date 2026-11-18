@@ -14,6 +14,7 @@ from app.extensions import db
 from app.forms import WargaForm, KeluargaForm
 from app.auth.routes import role_required
 from app.desil.routes import simpan_berkas_unggah
+from app.ocr_paddle import baca_kk_paddle
 
 # =============================================================================
 # 1. DAFTAR WARGA: GET /warga (Search NIK/Nama & Filter Keluarga & Filter Desil)
@@ -463,6 +464,56 @@ def tambah_keluarga():
         return redirect(url_for("dashboard") + "#dokumen-kk")
     flash("Fitur unggah & pendaftaran Kartu Keluarga kini dilakukan secara mandiri oleh warga melalui Akun User.", "info")
     return redirect(url_for("warga.daftar_warga"))
+
+
+@warga_bp.route("/akun/kk/ocr", methods=["POST"])
+@login_required
+@role_required("warga")
+def ocr_kk_warga():
+    """Memindai dokumen Kartu Keluarga menggunakan PaddleOCR dan mengembalikan data terstruktur."""
+    file = request.files.get("dokumen_kk")
+    existing_kk = current_user.data_keluarga
+
+    temp_path = None
+    if file and getattr(file, "filename", ""):
+        ok, err_msg, ext = _validate_kk_file(file)
+        if not ok:
+            return jsonify({"success": False, "error": err_msg}), 400
+        proj_root = os.path.abspath(os.path.join(current_app.root_path, ".."))
+        temp_dir = os.path.join(proj_root, UPLOAD_DIR)
+        os.makedirs(temp_dir, exist_ok=True)
+        unique_name = f"ocr_u{current_user.id}_{uuid.uuid4().hex[:8]}{ext}"
+        temp_path = os.path.join(temp_dir, unique_name)
+        file.save(temp_path)
+    elif existing_kk and existing_kk.dokumen_kk:
+        proj_root = os.path.abspath(os.path.join(current_app.root_path, ".."))
+        temp_path = os.path.join(proj_root, existing_kk.dokumen_kk)
+        if not os.path.exists(temp_path):
+            return jsonify({"success": False, "error": "Berkas dokumen tersimpan tidak ditemukan di server."}), 404
+    else:
+        return jsonify({"success": False, "error": "Silakan pilih berkas dokumen Kartu Keluarga terlebih dahulu sebelum memproses OCR."}), 400
+
+    try:
+        hasil = baca_kk_paddle(temp_path)
+        if not hasil.get("success"):
+            return jsonify({
+                "success": False,
+                "error": hasil.get("error", "Gagal memindai dokumen dengan PaddleOCR.")
+            }), 500
+
+        data = hasil.get("data", {})
+        return jsonify({
+            "success": True,
+            "message": "Dokumen Kartu Keluarga berhasil dipindai oleh PaddleOCR.",
+            "data": data,
+            "total_lines": hasil.get("total_lines_detected", 0)
+        })
+    finally:
+        if file and temp_path and os.path.exists(temp_path) and UPLOAD_DIR in temp_path:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
 
 
 @warga_bp.route("/akun/kk/simpan", methods=["POST"])

@@ -11,12 +11,14 @@
             <div class="card-body p-4 p-md-5">
                 <div class="row align-items-center">
                     <div class="col-lg-8">
-                        <div class="d-inline-flex align-items-center bg-white bg-opacity-20 rounded-pill px-3 py-1 mb-3 text-white small fw-bold">
+                        <div
+                            class="d-inline-flex align-items-center bg-white bg-opacity-20 rounded-pill px-3 py-1 mb-3 text-white small fw-bold">
                             <i class="bi bi-person-check-fill me-1.5"></i> Akun Warga Terdaftar Resmi
                         </div>
                         <h2 class="fw-bold mb-2 text-white">Selamat Datang, {{ current_user.nama }}!</h2>
                         <p class="mb-0 text-white-50 fs-6" style="max-width: 650px;">
-                            Pantau transparansi kategori desil kesejahteraan keluarga Anda, status kelayakan permohonan bansos dari Rule Engine, dan ajukan perubahan desil secara mandiri.
+                            Pantau transparansi kategori desil kesejahteraan keluarga Anda, status kelayakan permohonan
+                            bansos dari Rule Engine, dan ajukan perubahan desil secara mandiri.
                         </p>
                     </div>
                     <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
@@ -24,7 +26,8 @@
                             <span class="badge bg-white text-primary px-3 py-2 fs-6 rounded-pill shadow-sm">
                                 <i class="bi bi-shield-check me-1"></i> Data DTKS Terverifikasi
                             </span>
-                            <a href="{{ url_for('desil.ajukan_perubahan') }}" class="btn btn-warning btn-sm fw-bold text-dark rounded-pill px-3 py-2 shadow-sm">
+                            <a href="{{ url_for('desil.ajukan_perubahan') }}"
+                                class="btn btn-warning btn-sm fw-bold text-dark rounded-pill px-3 py-2 shadow-sm">
                                 <i class="bi bi-arrow-repeat me-1"></i> Ajukan Perubahan Desil
                             </a>
                         </div>
@@ -46,11 +49,13 @@
                     <span>Profil Kependudukan & Desil</span>
                 </h6>
                 {% if warga %}
-                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+                <span
+                    class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
                     <i class="bi bi-patch-check-fill me-1"></i> Terhubung
                 </span>
                 {% else %}
-                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
+                <span
+                    class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
                     <i class="bi bi-exclamation-circle me-1"></i> Belum Terhubung
                 </span>
                 {% endif %}
@@ -60,10 +65,12 @@
                 <!-- Foto Fisik Rumah Tinggal -->
                 <div class="mb-3 text-center">
                     <div class="img-preview-frame" style="height: 190px;">
-                        <img src="{{ url_for('static', filename=warga.foto_rumah_url) }}" alt="Foto Rumah Warga" style="height: 100%;">
+                        <img src="{{ url_for('static', filename=warga.foto_rumah_url) }}" alt="Foto Rumah Warga"
+                            style="height: 100%;">
                         <div class="img-preview-overlay">
                             <span><i class="bi bi-camera me-1"></i> Rumah Tinggal Warga</span>
-                            <span class="badge bg-light text-dark font-monospace" style="font-size: 0.65rem;">DTKS RIIL</span>
+                            <span class="badge bg-light text-dark font-monospace" style="font-size: 0.65rem;">DTKS
+                                RIIL</span>
                         </div>
                     </div>
                 </div>
@@ -81,7 +88,8 @@
                     <!-- Visual Desil Spectrum Bar (1 to 10) -->
                     <div class="desil-meter-container my-2" title="Desil Anda: {{ warga.desil }}">
                         {% for i in range(1, 11) %}
-                            <div class="desil-step step-{{ i }} {% if warga.desil == i %}active{% endif %}" title="Desil {{ i }}"></div>
+                        <div class="desil-step step-{{ i }} {% if warga.desil == i %}active{% endif %}"
+                            title="Desil {{ i }}"></div>
                         {% endfor %}
                     </div>
                     <div class="desil-scale-legend">
@@ -92,8 +100,10 @@
                     <p class="small text-muted mt-2 mb-2" style="font-size: 0.8rem; line-height: 1.4;">
                         {{ warga.keterangan_desil.deskripsi }}
                     </p>
-                    <div class="d-flex align-items-center small fw-semibold {% if warga.keterangan_desil.is_layak_bansos %}text-success{% else %}text-danger{% endif %} pt-2 border-top">
-                        <i class="bi {% if warga.keterangan_desil.is_layak_bansos %}bi-check-circle-fill{% else %}bi-x-octagon-fill{% endif %} me-1.5 fs-6"></i>
+                    <div
+                        class="d-flex align-items-center small fw-semibold {% if warga.keterangan_desil.is_layak_bansos %}text-success{% else %}text-danger{% endif %} pt-2 border-top">
+                        <i
+                            class="bi {% if warga.keterangan_desil.is_layak_bansos %}bi-check-circle-fill{% else %}bi-x-octagon-fill{% endif %} me-1.5 fs-6"></i>
                         <span>{{ warga.keterangan_desil.kelayakan }}</span>
                     </div>
                 </div>
@@ -105,9 +115,12 @@
                         <div>
                             <div class="fw-bold text-dark small mb-1">Data Desil Tidak Sesuai Kondisi Riil?</div>
                             <p class="text-muted small mb-2" style="font-size: 0.78rem;">
-                                Jika Anda tergolong keluarga kurang mampu namun sistem mencatat desil tinggi (misal <strong>Desil 7/10</strong>), ajukan <strong>Perubahan Desil</strong> dengan melampirkan foto rumah terkini dan slip penghasilan riil.
+                                Jika Anda tergolong keluarga kurang mampu namun sistem mencatat desil tinggi (misal
+                                <strong>Desil 7/10</strong>), ajukan <strong>Perubahan Desil</strong> dengan melampirkan
+                                foto rumah terkini dan slip penghasilan riil.
                             </p>
-                            <a href="{{ url_for('desil.ajukan_perubahan') }}" class="btn btn-warning btn-sm fw-bold text-dark w-100">
+                            <a href="{{ url_for('desil.ajukan_perubahan') }}"
+                                class="btn btn-warning btn-sm fw-bold text-dark w-100">
                                 <i class="bi bi-arrow-repeat me-1"></i> Ajukan Perubahan Desil
                             </a>
                         </div>
@@ -122,7 +135,9 @@
                 <div class="mb-2 pb-2 border-bottom">
                     <div class="text-muted small">Kartu Keluarga (KK):</div>
                     <div class="fw-semibold text-dark">{{ warga.keluarga.nomor_kk }}</div>
-                    <div class="small text-muted">Kepala Keluarga: {{ warga.keluarga.kepala_keluarga }}{% if warga.keluarga.nik_kepala_keluarga %} · <span class="font-monospace">NIK: {{ warga.keluarga.nik_kepala_keluarga }}</span>{% endif %}</div>
+                    <div class="small text-muted">Kepala Keluarga: {{ warga.keluarga.kepala_keluarga }}{% if
+                        warga.keluarga.nik_kepala_keluarga %} · <span class="font-monospace">NIK: {{
+                            warga.keluarga.nik_kepala_keluarga }}</span>{% endif %}</div>
                 </div>
                 <div class="mb-3 pb-2 border-bottom">
                     <div class="text-muted small">Alamat Domisili:</div>
@@ -158,7 +173,8 @@
                         Akun Anda belum terhubung dengan master data warga kelurahan.
                     </p>
                     <div class="alert alert-info small text-start mb-0">
-                        <i class="bi bi-info-circle me-1"></i> Pastikan nomor NIK pada akun Anda sesuai dengan KTP resmi agar riwayat bansos dan desil dapat dimuat otomatis.
+                        <i class="bi bi-info-circle me-1"></i> Pastikan nomor NIK pada akun Anda sesuai dengan KTP resmi
+                        agar riwayat bansos dan desil dapat dimuat otomatis.
                     </div>
                 </div>
                 {% endif %}
@@ -206,13 +222,15 @@
         <!-- BAGIAN: Dokumen Kartu Keluarga (Mandiri Warga) -->
         {% set st_dok = keluarga.status_dokumen if (keluarga and keluarga.status_dokumen) else 'Belum Diunggah' %}
         <div class="card border-0 shadow-sm mb-4" id="dokumen-kk">
-            <div class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div
+                class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                         <i class="bi bi-file-earmark-richtext-fill text-primary"></i>
                         <span>Dokumen Kartu Keluarga</span>
                     </h5>
-                    <div class="small text-muted mt-0.5">Unggah foto atau PDF Kartu Keluarga Anda secara mandiri lalu simpan untuk verifikasi admin</div>
+                    <div class="small text-muted mt-0.5">Unggah foto atau PDF Kartu Keluarga Anda secara mandiri lalu
+                        simpan untuk verifikasi admin</div>
                 </div>
                 <span id="kk-status-badge" class="badge rounded-pill px-3 py-1.5
                     {% if st_dok == 'Terverifikasi' %}bg-success-subtle text-success border border-success-subtle
@@ -228,7 +246,8 @@
             </div>
             <div class="card-body p-4">
                 {% if keluarga and keluarga.catatan_verifikasi %}
-                <div class="alert {% if st_dok == 'Perlu Perbaikan' %}alert-danger{% else %}alert-info{% endif %} small py-2.5 px-3 mb-3">
+                <div
+                    class="alert {% if st_dok == 'Perlu Perbaikan' %}alert-danger{% else %}alert-info{% endif %} small py-2.5 px-3 mb-3">
                     <i class="bi bi-chat-square-text-fill me-1"></i>
                     <strong>Catatan Petugas/Admin:</strong> {{ keluarga.catatan_verifikasi }}
                 </div>
@@ -242,37 +261,47 @@
                                 <label for="input-dokumen-kk" class="form-label fw-semibold small text-dark mb-2">
                                     <i class="bi bi-cloud-arrow-up-fill text-primary me-1"></i> Upload Kartu Keluarga
                                 </label>
-                                <input type="file"
-                                       id="input-dokumen-kk"
-                                       name="dokumen_kk"
-                                       class="form-control form-control-sm mb-2"
-                                       accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+                                <input type="file" id="input-dokumen-kk" name="dokumen_kk"
+                                    class="form-control form-control-sm mb-2"
+                                    accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
                                 <div class="form-text small text-muted mb-3" style="font-size: 0.74rem;">
                                     Format didukung: <strong>JPG, JPEG, PNG, atau PDF</strong> (Maks. 10 MB).
                                 </div>
 
                                 <!-- Preview Box -->
-                                <div id="kk-preview-container" class="border rounded-3 bg-white flex-grow-1 d-flex align-items-center justify-content-center overflow-hidden position-relative mb-3" style="min-height: 200px;">
-                                    {% set existing_doc_url = url_for('warga.lihat_dokumen_kk', keluarga_id=keluarga.id) if (keluarga and keluarga.dokumen_kk) else '' %}
-                                    {% set existing_is_pdf = (keluarga.dokumen_kk or '').lower().endswith('.pdf') if (keluarga and keluarga.dokumen_kk) else False %}
-                                    <div id="kk-preview-placeholder" class="text-center text-muted p-3 {% if existing_doc_url %}d-none{% endif %}">
+                                <div id="kk-preview-container"
+                                    class="border rounded-3 bg-white flex-grow-1 d-flex align-items-center justify-content-center overflow-hidden position-relative mb-3"
+                                    style="min-height: 200px;">
+                                    {% set existing_doc_url = url_for('warga.lihat_dokumen_kk', keluarga_id=keluarga.id)
+                                    if (keluarga and keluarga.dokumen_kk) else '' %}
+                                    {% set existing_is_pdf = (keluarga.dokumen_kk or '').lower().endswith('.pdf') if
+                                    (keluarga and keluarga.dokumen_kk) else False %}
+                                    <div id="kk-preview-placeholder"
+                                        class="text-center text-muted p-3 {% if existing_doc_url %}d-none{% endif %}">
                                         <i class="bi bi-file-earmark-image fs-1 opacity-50 d-block mb-1"></i>
                                         <div class="small">Preview dokumen KK akan tampil di sini sebelum dikirim</div>
                                     </div>
                                     <img id="kk-preview-img"
-                                         src="{% if existing_doc_url and not existing_is_pdf %}{{ existing_doc_url }}{% endif %}"
-                                         alt="Preview Dokumen KK"
-                                         class="img-fluid {% if not (existing_doc_url and not existing_is_pdf) %}d-none{% endif %}"
-                                         style="max-height: 240px; width: 100%; object-fit: contain;">
+                                        src="{% if existing_doc_url and not existing_is_pdf %}{{ existing_doc_url }}{% endif %}"
+                                        alt="Preview Dokumen KK"
+                                        class="img-fluid {% if not (existing_doc_url and not existing_is_pdf) %}d-none{% endif %}"
+                                        style="max-height: 240px; width: 100%; object-fit: contain;">
                                     <iframe id="kk-preview-pdf"
-                                            src="{% if existing_doc_url and existing_is_pdf %}{{ existing_doc_url }}{% endif %}"
-                                            class="w-100 border-0 {% if not (existing_doc_url and existing_is_pdf) %}d-none{% endif %}"
-                                            style="height: 240px;"></iframe>
+                                        src="{% if existing_doc_url and existing_is_pdf %}{{ existing_doc_url }}{% endif %}"
+                                        class="w-100 border-0 {% if not (existing_doc_url and existing_is_pdf) %}d-none{% endif %}"
+                                        style="height: 240px;"></iframe>
                                 </div>
+
+                                <button type="button" id="btn-proses-ocr"
+                                    class="btn btn-outline-primary btn-sm w-100 fw-semibold mb-2 shadow-sm">
+                                    <i class="bi bi-magic me-1"></i> Pindai Dokumen Otomatis (PaddleOCR)
+                                </button>
+                                <div id="kk-ocr-feedback" class="small mb-2"></div>
 
                                 {% if existing_doc_url %}
                                 <div class="d-grid gap-2">
-                                    <a href="{{ existing_doc_url }}" target="_blank" class="btn btn-outline-secondary btn-sm text-decoration-none small">
+                                    <a href="{{ existing_doc_url }}" target="_blank"
+                                        class="btn btn-outline-secondary btn-sm text-decoration-none small">
                                         <i class="bi bi-box-arrow-up-right me-1"></i>Lihat Dokumen Tersimpan
                                     </a>
                                 </div>
@@ -284,62 +313,80 @@
                         <!-- Panel Kanan: Data KK & Tombol Simpan Data -->
                         <div class="col-md-7">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-semibold small text-dark"><i class="bi bi-card-list text-primary me-1"></i>Data Kartu Keluarga</span>
-                                <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Pengisian Manual</span>
+                                <span class="fw-semibold small text-dark"><i
+                                        class="bi bi-card-list text-primary me-1"></i>Data Kartu Keluarga</span>
+                                <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Pengisian
+                                    Manual</span>
                             </div>
 
                             <div class="row g-2.5">
                                 <div class="col-sm-6">
-                                    <label class="form-label small fw-semibold mb-1">Nomor Kartu Keluarga (16 Digit) <span class="text-danger">*</span></label>
-                                    <input type="text" id="kk-nomor" name="nomor_kk" maxlength="16" class="form-control form-control-sm font-monospace"
-                                           placeholder="16 digit No. KK" value="{{ keluarga.nomor_kk if keluarga else '' }}" required>
+                                    <label class="form-label small fw-semibold mb-1">Nomor Kartu Keluarga (16 Digit)
+                                        <span class="text-danger">*</span></label>
+                                    <input type="text" id="kk-nomor" name="nomor_kk" maxlength="16"
+                                        class="form-control form-control-sm font-monospace"
+                                        placeholder="16 digit No. KK"
+                                        value="{{ keluarga.nomor_kk if keluarga else '' }}" required>
                                 </div>
                                 <div class="col-sm-6">
-                                    <label class="form-label small fw-semibold mb-1">NIK Kepala Keluarga (16 Digit)</label>
-                                    <input type="text" id="kk-nik-kepala" name="nik_kepala_keluarga" maxlength="16" class="form-control form-control-sm font-monospace"
-                                           placeholder="16 digit NIK Kepala Keluarga" value="{{ keluarga.nik_kepala_keluarga if (keluarga and keluarga.nik_kepala_keluarga) else '' }}">
+                                    <label class="form-label small fw-semibold mb-1">NIK Kepala Keluarga (16
+                                        Digit)</label>
+                                    <input type="text" id="kk-nik-kepala" name="nik_kepala_keluarga" maxlength="16"
+                                        class="form-control form-control-sm font-monospace"
+                                        placeholder="16 digit NIK Kepala Keluarga"
+                                        value="{{ keluarga.nik_kepala_keluarga if (keluarga and keluarga.nik_kepala_keluarga) else '' }}">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label small fw-semibold mb-1">Nama Kepala Keluarga <span class="text-danger">*</span></label>
-                                    <input type="text" id="kk-kepala" name="kepala_keluarga" class="form-control form-control-sm"
-                                           placeholder="Sesuai dokumen KK" value="{{ keluarga.kepala_keluarga if keluarga else '' }}" required>
+                                    <label class="form-label small fw-semibold mb-1">Nama Kepala Keluarga <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" id="kk-kepala" name="kepala_keluarga"
+                                        class="form-control form-control-sm" placeholder="Sesuai dokumen KK"
+                                        value="{{ keluarga.kepala_keluarga if keluarga else '' }}" required>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label small fw-semibold mb-1">Alamat <span class="text-danger">*</span></label>
+                                    <label class="form-label small fw-semibold mb-1">Alamat <span
+                                            class="text-danger">*</span></label>
                                     <input type="text" id="kk-alamat" name="alamat" class="form-control form-control-sm"
-                                           placeholder="Alamat lengkap pada KK" value="{{ keluarga.alamat if keluarga else '' }}" required>
+                                        placeholder="Alamat lengkap pada KK"
+                                        value="{{ keluarga.alamat if keluarga else '' }}" required>
                                 </div>
                                 <div class="col-sm-4">
                                     <label class="form-label small fw-semibold mb-1">RT / RW</label>
                                     <input type="text" id="kk-rtrw" name="rt_rw" class="form-control form-control-sm"
-                                           placeholder="001/002" value="{{ keluarga.rt_rw if (keluarga and keluarga.rt_rw) else '' }}">
+                                        placeholder="001/002"
+                                        value="{{ keluarga.rt_rw if (keluarga and keluarga.rt_rw) else '' }}">
                                 </div>
                                 <div class="col-sm-8">
                                     <label class="form-label small fw-semibold mb-1">Desa / Kelurahan</label>
-                                    <input type="text" id="kk-desa" name="desa_kelurahan" class="form-control form-control-sm"
-                                           placeholder="Nama Desa/Kelurahan" value="{{ keluarga.desa_kelurahan if (keluarga and keluarga.desa_kelurahan) else '' }}">
+                                    <input type="text" id="kk-desa" name="desa_kelurahan"
+                                        class="form-control form-control-sm" placeholder="Nama Desa/Kelurahan"
+                                        value="{{ keluarga.desa_kelurahan if (keluarga and keluarga.desa_kelurahan) else '' }}">
                                 </div>
                                 <div class="col-sm-4">
                                     <label class="form-label small fw-semibold mb-1">Kecamatan</label>
                                     <input type="text" id="kk-kec" name="kecamatan" class="form-control form-control-sm"
-                                           placeholder="Nama Kecamatan" value="{{ keluarga.kecamatan if (keluarga and keluarga.kecamatan) else '' }}">
+                                        placeholder="Nama Kecamatan"
+                                        value="{{ keluarga.kecamatan if (keluarga and keluarga.kecamatan) else '' }}">
                                 </div>
                                 <div class="col-sm-4">
                                     <label class="form-label small fw-semibold mb-1">Kabupaten / Kota</label>
-                                    <input type="text" id="kk-kab" name="kabupaten_kota" class="form-control form-control-sm"
-                                           placeholder="Kabupaten/Kota" value="{{ keluarga.kabupaten_kota if (keluarga and keluarga.kabupaten_kota) else '' }}">
+                                    <input type="text" id="kk-kab" name="kabupaten_kota"
+                                        class="form-control form-control-sm" placeholder="Kabupaten/Kota"
+                                        value="{{ keluarga.kabupaten_kota if (keluarga and keluarga.kabupaten_kota) else '' }}">
                                 </div>
                                 <div class="col-sm-4">
                                     <label class="form-label small fw-semibold mb-1">Provinsi</label>
                                     <input type="text" id="kk-prov" name="provinsi" class="form-control form-control-sm"
-                                           placeholder="Nama Provinsi" value="{{ keluarga.provinsi if (keluarga and keluarga.provinsi) else '' }}">
+                                        placeholder="Nama Provinsi"
+                                        value="{{ keluarga.provinsi if (keluarga and keluarga.provinsi) else '' }}">
                                 </div>
                             </div>
 
                             <div id="kk-save-feedback" class="mt-3 small"></div>
 
                             <div class="d-flex justify-content-end mt-3">
-                                <button type="submit" id="btn-simpan-kk" class="btn btn-primary btn-sm px-4 py-2 fw-semibold shadow-sm">
+                                <button type="submit" id="btn-simpan-kk"
+                                    class="btn btn-primary btn-sm px-4 py-2 fw-semibold shadow-sm">
                                     <i class="bi bi-save me-1"></i> Simpan Data
                                 </button>
                             </div>
@@ -349,15 +396,18 @@
 
                 {% if keluarga and keluarga.riwayat_dokumen %}
                 <div class="mt-4 pt-3 border-top">
-                    <div class="small fw-bold text-muted mb-2"><i class="bi bi-clock-history me-1"></i>Riwayat Unggahan &amp; Verifikasi Dokumen KK</div>
+                    <div class="small fw-bold text-muted mb-2"><i class="bi bi-clock-history me-1"></i>Riwayat Unggahan
+                        &amp; Verifikasi Dokumen KK</div>
                     <div class="list-group list-group-flush small">
                         {% for rv in keluarga.riwayat_dokumen|reverse %}
-                        <div class="list-group-item px-0 py-1.5 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div
+                            class="list-group-item px-0 py-1.5 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div>
                                 <span class="fw-semibold text-dark">{{ rv.aksi }}</span>
                                 {% if rv.catatan %}<span class="text-muted"> — {{ rv.catatan }}</span>{% endif %}
                             </div>
-                            <span class="text-muted font-monospace" style="font-size: 0.72rem;">{{ rv.waktu or rv.diarsipkan_pada or '' }}</span>
+                            <span class="text-muted font-monospace" style="font-size: 0.72rem;">{{ rv.waktu or
+                                rv.diarsipkan_pada or '' }}</span>
                         </div>
                         {% endfor %}
                     </div>
@@ -368,7 +418,8 @@
 
         <!-- Status Pengajuan Perubahan Desil Saya -->
         <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div
+                class="card-header bg-white py-3.5 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                     <i class="bi bi-arrow-repeat text-primary"></i>
                     <span>Status Pengajuan Perubahan Desil Saya</span>
@@ -396,19 +447,25 @@
                             <tr>
                                 <td class="ps-4">
                                     <div class="fw-bold font-monospace text-primary">#REQ-{{ req.id }}</div>
-                                    <div class="small text-muted"><i class="bi bi-calendar3 me-1"></i>{{ req.tanggal_pengajuan.strftime('%d/%m/%Y') }}</div>
+                                    <div class="small text-muted"><i class="bi bi-calendar3 me-1"></i>{{
+                                        req.tanggal_pengajuan.strftime('%d/%m/%Y') }}</div>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-1.5">
-                                        <span class="badge bg-{{ req.keterangan_desil_lama.badge_class }}">{{ req.keterangan_desil_lama.label }}</span>
+                                        <span class="badge bg-{{ req.keterangan_desil_lama.badge_class }}">{{
+                                            req.keterangan_desil_lama.label }}</span>
                                         <i class="bi bi-arrow-right text-muted small"></i>
-                                        <span class="badge bg-{{ req.keterangan_desil_diajukan.badge_class }}">{{ req.keterangan_desil_diajukan.label }}</span>
+                                        <span class="badge bg-{{ req.keterangan_desil_diajukan.badge_class }}">{{
+                                            req.keterangan_desil_diajukan.label }}</span>
                                     </div>
-                                    <div class="small text-muted mt-1">{{ req.keterangan_desil_diajukan.kategori }}</div>
+                                    <div class="small text-muted mt-1">{{ req.keterangan_desil_diajukan.kategori }}
+                                    </div>
                                 </td>
                                 <td>
-                                    <div class="rounded border overflow-hidden shadow-sm" style="width: 70px; height: 46px;">
-                                        <img src="{{ url_for('static', filename=req.foto_rumah_baru) }}" alt="Foto Rumah" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div class="rounded border overflow-hidden shadow-sm"
+                                        style="width: 70px; height: 46px;">
+                                        <img src="{{ url_for('static', filename=req.foto_rumah_baru) }}"
+                                            alt="Foto Rumah" style="width: 100%; height: 100%; object-fit: cover;">
                                     </div>
                                 </td>
                                 <td>
@@ -417,21 +474,22 @@
                                 </td>
                                 <td>
                                     {% if req.status == 'menunggu' %}
-                                        <span class="badge status-badge-perlu-tinjau rounded-pill px-2.5 py-1">
-                                            <i class="bi bi-clock-history me-1"></i> Menunggu Verifikasi
-                                        </span>
+                                    <span class="badge status-badge-perlu-tinjau rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-clock-history me-1"></i> Menunggu Verifikasi
+                                    </span>
                                     {% elif req.status == 'disetujui' %}
-                                        <span class="badge status-badge-layak rounded-pill px-2.5 py-1">
-                                            <i class="bi bi-check-circle-fill me-1"></i> Disetujui
-                                        </span>
+                                    <span class="badge status-badge-layak rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Disetujui
+                                    </span>
                                     {% else %}
-                                        <span class="badge status-badge-tidak-layak rounded-pill px-2.5 py-1">
-                                            <i class="bi bi-x-circle-fill me-1"></i> Ditolak
-                                        </span>
+                                    <span class="badge status-badge-tidak-layak rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-x-circle-fill me-1"></i> Ditolak
+                                    </span>
                                     {% endif %}
                                 </td>
                                 <td class="text-end pe-4">
-                                    <a href="{{ url_for('desil.detail_pengajuan', id=req.id) }}" class="btn btn-outline-secondary btn-sm">
+                                    <a href="{{ url_for('desil.detail_pengajuan', id=req.id) }}"
+                                        class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-eye me-1"></i> Rincian
                                     </a>
                                 </td>
@@ -458,7 +516,8 @@
                     <i class="bi bi-file-earmark-medical-fill text-primary"></i>
                     <span>Status Verifikasi Bantuan Sosial Saya</span>
                 </h5>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1">
+                <span
+                    class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1">
                     {{ riwayat|length }} Evaluasi Terdaftar
                 </span>
             </div>
@@ -480,30 +539,34 @@
                             <tr>
                                 <td class="ps-4">
                                     <div class="fw-bold text-dark">{{ item.program.nama_program }}</div>
-                                    <div class="small text-muted">Syarat Maks Desil: Desil {{ item.program.kriteria_desil_max or '-' }}</div>
+                                    <div class="small text-muted">Syarat Maks Desil: Desil {{
+                                        item.program.kriteria_desil_max or '-' }}</div>
                                 </td>
                                 <td>
                                     {{ status_badge(item.status_otomatis) }}
                                 </td>
                                 <td>
                                     {% if item.status_final %}
-                                        {{ status_badge(item.status_final) }}
-                                        {% if item.catatan_petugas %}
-                                        <div class="small text-muted mt-1 text-truncate" style="max-width: 180px;" title="{{ item.catatan_petugas }}">
-                                            <i class="bi bi-chat-left-text me-1"></i>{{ item.catatan_petugas }}
-                                        </div>
-                                        {% endif %}
+                                    {{ status_badge(item.status_final) }}
+                                    {% if item.catatan_petugas %}
+                                    <div class="small text-muted mt-1 text-truncate" style="max-width: 180px;"
+                                        title="{{ item.catatan_petugas }}">
+                                        <i class="bi bi-chat-left-text me-1"></i>{{ item.catatan_petugas }}
+                                    </div>
+                                    {% endif %}
                                     {% else %}
-                                        <span class="badge status-badge-pending rounded-pill px-2.5 py-1">
-                                            <i class="bi bi-clock me-1"></i> Menunggu Konfirmasi
-                                        </span>
+                                    <span class="badge status-badge-pending rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-clock me-1"></i> Menunggu Konfirmasi
+                                    </span>
                                     {% endif %}
                                 </td>
                                 <td class="small text-muted">
-                                    <i class="bi bi-calendar3 me-1"></i>{{ item.tanggal_verifikasi.strftime('%d/%m/%Y') if item.tanggal_verifikasi else '-' }}
+                                    <i class="bi bi-calendar3 me-1"></i>{{ item.tanggal_verifikasi.strftime('%d/%m/%Y')
+                                    if item.tanggal_verifikasi else '-' }}
                                 </td>
                                 <td class="text-end pe-4">
-                                    <a href="{{ url_for('verifikasi.detail_verifikasi', id=item.id) }}" class="btn btn-outline-primary btn-sm">
+                                    <a href="{{ url_for('verifikasi.detail_verifikasi', id=item.id) }}"
+                                        class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-search me-1"></i> Rincian Audit
                                     </a>
                                 </td>
@@ -517,7 +580,8 @@
                     <i class="bi bi-folder-x text-muted display-4 mb-2 d-block opacity-50"></i>
                     <h6 class="fw-bold text-dark">Belum Ada Riwayat Verifikasi Bansos</h6>
                     <p class="text-muted small mb-0">
-                        Data Anda belum pernah dimasukkan ke dalam sesi evaluasi verifikasi bansos oleh petugas kelurahan.
+                        Data Anda belum pernah dimasukkan ke dalam sesi evaluasi verifikasi bansos oleh petugas
+                        kelurahan.
                     </p>
                 </div>
                 {% endif %}
@@ -539,27 +603,31 @@
                         <div class="card h-100 border rounded-3 p-3.5 bg-light bg-opacity-40 card-lift">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h6 class="fw-bold text-dark mb-0">{{ p.nama_program }}</h6>
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Aktif</span>
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Aktif</span>
                             </div>
-                            <p class="small text-muted mb-3">{{ p.deskripsi or 'Program bantuan kesejahteraan sosial bagi keluarga pra-sejahtera.' }}</p>
+                            <p class="small text-muted mb-3">{{ p.deskripsi or 'Program bantuan kesejahteraan sosial
+                                bagi keluarga pra-sejahtera.' }}</p>
                             <div class="mt-auto small border-top pt-2.5">
                                 <div class="d-flex justify-content-between text-muted mb-1.5">
                                     <span>Batas Maksimal Desil:</span>
                                     <span class="fw-bold text-primary">
                                         {% if p.kriteria_desil_max %}
-                                            &le; Desil {{ p.kriteria_desil_max }}
+                                        &le; Desil {{ p.kriteria_desil_max }}
                                         {% else %}
-                                            Semua Desil
+                                        Semua Desil
                                         {% endif %}
                                     </span>
                                 </div>
                                 <div class="d-flex justify-content-between text-muted mb-1.5">
                                     <span>Batas Maks. Penghasilan:</span>
-                                    <span class="fw-semibold text-dark">&le; {{ p.kriteria_penghasilan_max|rupiah }}</span>
+                                    <span class="fw-semibold text-dark">&le; {{ p.kriteria_penghasilan_max|rupiah
+                                        }}</span>
                                 </div>
                                 <div class="d-flex justify-content-between text-muted mb-1.5">
                                     <span>Syarat Min. Tanggungan:</span>
-                                    <span class="fw-semibold text-dark">&ge; {{ p.kriteria_tanggungan_min }} Orang</span>
+                                    <span class="fw-semibold text-dark">&ge; {{ p.kriteria_tanggungan_min }}
+                                        Orang</span>
                                 </div>
                                 {% if p.kriteria_aset_max %}
                                 <div class="d-flex justify-content-between text-muted">
@@ -584,65 +652,162 @@
 
 {% block scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const fileInput = document.getElementById("input-dokumen-kk");
-    const previewImg = document.getElementById("kk-preview-img");
-    const previewPdf = document.getElementById("kk-preview-pdf");
-    const previewPlaceholder = document.getElementById("kk-preview-placeholder");
-    const uploadStatus = document.getElementById("kk-upload-status");
-    const formKK = document.getElementById("form-kk-warga");
-    const saveFeedback = document.getElementById("kk-save-feedback");
-    const btnSimpan = document.getElementById("btn-simpan-kk");
+    document.addEventListener("DOMContentLoaded", function () {
+        const fileInput = document.getElementById("input-dokumen-kk");
+        const previewImg = document.getElementById("kk-preview-img");
+        const previewPdf = document.getElementById("kk-preview-pdf");
+        const previewPlaceholder = document.getElementById("kk-preview-placeholder");
+        const uploadStatus = document.getElementById("kk-upload-status");
+        const formKK = document.getElementById("form-kk-warga");
+        const saveFeedback = document.getElementById("kk-save-feedback");
+        const btnSimpan = document.getElementById("btn-simpan-kk");
+        const btnOcr = document.getElementById("btn-proses-ocr");
+        const ocrFeedback = document.getElementById("kk-ocr-feedback");
 
-    if (!fileInput || !formKK) return;
+        if (!fileInput || !formKK) return;
 
-    let previewObjectUrl = null;
+        let previewObjectUrl = null;
 
-    // 1. Preview dokumen sebelum dikirim (JPG/JPEG/PNG atau PDF)
-    fileInput.addEventListener("change", function () {
-        const file = this.files[0];
-        if (uploadStatus) uploadStatus.innerHTML = "";
-        if (saveFeedback) saveFeedback.innerHTML = "";
+        // 1. Preview dokumen sebelum dikirim (JPG/JPEG/PNG atau PDF)
+        fileInput.addEventListener("change", function () {
+            const file = this.files[0];
+            if (uploadStatus) uploadStatus.innerHTML = "";
+            if (saveFeedback) saveFeedback.innerHTML = "";
 
-        if (!file) return;
+            if (!file) return;
 
-        const nameLower = file.name.toLowerCase();
-        const allowed = nameLower.endsWith(".jpg") || nameLower.endsWith(".jpeg") || nameLower.endsWith(".png") || nameLower.endsWith(".pdf");
-        if (!allowed) {
-            if (uploadStatus) {
-                uploadStatus.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
-                uploadStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i> Format file tidak valid. Harap pilih file JPG, JPEG, PNG, atau PDF.';
+            const nameLower = file.name.toLowerCase();
+            const allowed = nameLower.endsWith(".jpg") || nameLower.endsWith(".jpeg") || nameLower.endsWith(".png") || nameLower.endsWith(".pdf");
+            if (!allowed) {
+                if (uploadStatus) {
+                    uploadStatus.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
+                    uploadStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i> Format file tidak valid. Harap pilih file JPG, JPEG, PNG, atau PDF.';
+                }
+                this.value = "";
+                return;
             }
-            this.value = "";
+            if (file.size > 10 * 1024 * 1024) {
+                if (uploadStatus) {
+                    uploadStatus.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
+                    uploadStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i> Ukuran file melebihi batas maksimal 10 MB.';
+                }
+                this.value = "";
+                return;
+            }
+
+            if (previewObjectUrl) {
+                URL.revokeObjectURL(previewObjectUrl);
+            }
+            previewObjectUrl = URL.createObjectURL(file);
+
+            previewPlaceholder.classList.add("d-none");
+            if (nameLower.endsWith(".pdf")) {
+                previewImg.classList.add("d-none");
+                previewPdf.src = previewObjectUrl;
+                previewPdf.classList.remove("d-none");
+            } else {
+                previewPdf.classList.add("d-none");
+                previewImg.src = previewObjectUrl;
+                previewImg.classList.remove("d-none");
+            }
+        });
+
+        // 2. Pemindaian Dokumen Otomatis Menggunakan PaddleOCR
+        if (btnOcr) {
+            btnOcr.addEventListener("click", async function () {
+                if (ocrFeedback) ocrFeedback.innerHTML = "";
+                if (saveFeedback) saveFeedback.innerHTML = "";
+
+                const file = fileInput.files[0];
+        const hasExisting = "{{ '1' if keluarga and keluarga.dokumen_kk else '0' }}" === "1";
+
+        if (!file && !hasExisting) {
+            if (ocrFeedback) {
+                ocrFeedback.className = "alert alert-warning py-2 px-3 small mb-2";
+                ocrFeedback.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> Silakan pilih berkas dokumen Kartu Keluarga terlebih dahulu sebelum memindai.';
+            }
+            fileInput.focus();
             return;
         }
-        if (file.size > 10 * 1024 * 1024) {
-            if (uploadStatus) {
-                uploadStatus.className = "alert alert-danger py-2 px-3 mt-2 mb-0 small";
-                uploadStatus.innerHTML = '<i class="bi bi-x-circle me-1"></i> Ukuran file melebihi batas maksimal 10 MB.';
+
+        const fd = new FormData();
+        if (file) {
+            fd.append("dokumen_kk", file);
+        }
+
+        btnOcr.disabled = true;
+        btnOcr.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Memindai Dokumen (PaddleOCR)...';
+
+        let seconds = 0;
+        if (ocrFeedback) {
+            ocrFeedback.className = "alert alert-info py-2 px-3 small mb-2";
+            ocrFeedback.innerHTML = '<div class="d-flex align-items-center"><span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span><span>Sedang menganalisis teks Kartu Keluarga dengan AI PaddleOCR... (<strong id="ocr-timer-count">0</strong> detik). Harap tunggu sebentar.</span></div>';
+        }
+        const timerInterval = setInterval(() => {
+            seconds++;
+            const tEl = document.getElementById("ocr-timer-count");
+            if (tEl) tEl.textContent = seconds;
+        }, 1000);
+
+        try {
+            const res = await fetch("{{ url_for('warga.ocr_kk_warga') }}", {
+                method: "POST",
+                body: fd
+            });
+            const result = await res.json();
+            clearInterval(timerInterval);
+            if (!res.ok || !result.success) {
+                if (ocrFeedback) {
+                    ocrFeedback.className = "alert alert-danger py-2 px-3 small mb-2";
+                    ocrFeedback.innerHTML = `<i class="bi bi-x-circle me-1"></i> ${result.error || 'Gagal memproses OCR dokumen.'}`;
+                }
+                return;
             }
-            this.value = "";
-            return;
-        }
 
-        if (previewObjectUrl) {
-            URL.revokeObjectURL(previewObjectUrl);
-        }
-        previewObjectUrl = URL.createObjectURL(file);
+            const d = result.data || {};
+            let countFilled = 0;
 
-        previewPlaceholder.classList.add("d-none");
-        if (nameLower.endsWith(".pdf")) {
-            previewImg.classList.add("d-none");
-            previewPdf.src = previewObjectUrl;
-            previewPdf.classList.remove("d-none");
-        } else {
-            previewPdf.classList.add("d-none");
-            previewImg.src = previewObjectUrl;
-            previewImg.classList.remove("d-none");
+            const mapFields = [
+                { id: "kk-nomor", val: d.nomor_kk },
+                { id: "kk-nik-kepala", val: d.nik_kepala_keluarga },
+                { id: "kk-kepala", val: d.kepala_keluarga },
+                { id: "kk-alamat", val: d.alamat },
+                { id: "kk-rtrw", val: d.rt_rw },
+                { id: "kk-desa", val: d.desa_kelurahan },
+                { id: "kk-kec", val: d.kecamatan },
+                { id: "kk-kab", val: d.kabupaten_kota },
+                { id: "kk-prov", val: d.provinsi }
+            ];
+
+            mapFields.forEach(item => {
+                const el = document.getElementById(item.id);
+                if (el && item.val) {
+                    el.value = item.val;
+                    countFilled++;
+                    el.classList.add("is-valid");
+                    setTimeout(() => el.classList.remove("is-valid"), 4500);
+                }
+            });
+
+            if (ocrFeedback) {
+                ocrFeedback.className = "alert alert-success py-2 px-3 small mb-2";
+                ocrFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> <strong>Selesai (${seconds} detik)!</strong> Dokumen berhasil dipindai. ${countFilled} kolom berhasil diisi otomatis. Silakan periksa atau ubah isian jika diperlukan sebelum klik <strong>Simpan Data</strong>.`;
+            }
+        } catch (err) {
+            clearInterval(timerInterval);
+            if (ocrFeedback) {
+                ocrFeedback.className = "alert alert-danger py-2 px-3 small mb-2";
+                ocrFeedback.innerHTML = `<i class="bi bi-exclamation-octagon me-1"></i> Terjadi kesalahan jaringan saat proses OCR: ${err.message}`;
+            }
+        } finally {
+            clearInterval(timerInterval);
+            btnOcr.disabled = false;
+            btnOcr.innerHTML = '<i class="bi bi-magic me-1"></i> Pindai Dokumen Otomatis (PaddleOCR)';
         }
     });
+    }
 
-    // 2. Simpan Data Dokumen & Formulir KK ke Database
+    // 3. Simpan Data Dokumen & Formulir KK ke Database
     formKK.addEventListener("submit", async function (e) {
         e.preventDefault();
         saveFeedback.innerHTML = "";

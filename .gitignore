@@ -52,11 +52,14 @@ cover/
 # Environments & Virtual Envs
 .env
 .venv
+.venv*/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+.paddlex/
+scratch/
 
 # IDE / Editor
 .vscode/

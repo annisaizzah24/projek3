@@ -63,16 +63,15 @@ class TestKKWargaFlow(unittest.TestCase):
     def test_1_2_tampilan_admin_dan_warga(self):
         """
         Uji #1 & #2:
-        - Tombol + Kartu Keluarga tidak ada di Admin -> Data Warga.
-        - Tombol + Tambah Warga tetap ada.
+        - Tombol + Tambah Warga tetap ada di Admin -> Data Warga.
         - Bagian 'Dokumen Kartu Keluarga' tersedia di halaman Akun Warga (/dashboard).
-        - Tombol 'Proses OCR' TIDAK ADA pada tampilan.
+        - Tombol 'Pindai Dokumen Otomatis (PaddleOCR)' tersedia di Akun Warga.
+        - Tombol 'Simpan Data' tersedia untuk verifikasi admin.
         """
         self._login("admin_uji", "admin123")
         res_admin = self.client.get("/warga")
         html_admin = res_admin.get_data(as_text=True)
         self.assertEqual(res_admin.status_code, 200)
-        self.assertNotIn("+ Kartu Keluarga", html_admin)
         self.assertIn("+ Tambah Warga", html_admin)
         self.assertIn("Verifikasi Dokumen Kartu Keluarga", html_admin)
         self._logout()
@@ -82,36 +81,46 @@ class TestKKWargaFlow(unittest.TestCase):
         html_warga = res_warga.get_data(as_text=True)
         self.assertEqual(res_warga.status_code, 200)
         self.assertIn("Dokumen Kartu Keluarga", html_warga)
-        self.assertNotIn("Proses OCR", html_warga)
-        self.assertNotIn("Scan & Isi Otomatis", html_warga)
+        self.assertIn("Pindai Dokumen Otomatis (PaddleOCR)", html_warga)
         self.assertIn("Simpan Data", html_warga)
         self.assertIn("Belum Diunggah", html_warga)
         self._logout()
 
-    def test_3_4_5_6_endpoint_ocr_dihapus_dan_validasi_upload_manual(self):
+    def test_3_4_5_6_endpoint_ocr_paddle_dan_validasi_upload(self):
         """
         Uji #3, #4, #5, #6:
-        - Endpoint OCR (/akun/kk/ocr dan /keluarga/ocr) sudah dihapus dan merespons 404.
-        - Pengunggahan berkas manual menolak format tidak sah (misal .txt).
-        - Pengisian data KK manual berhasil dengan berkas dokumen sah.
+        - Endpoint OCR (/akun/kk/ocr) memvalidasi berkas dokumen.
+        - Endpoint menolak format berkas tidak sah (misal .txt).
+        - Pengunggahan berkas manual menolak format tidak sah.
+        - Endpoint OCR memproses gambar dan mengembalikan struktur data lengkap.
         """
         self._login("warga_a", "warga123")
 
-        # Endpoint OCR sudah dihapus (404)
-        res_ocr = self.client.post("/akun/kk/ocr", data={})
-        self.assertEqual(res_ocr.status_code, 404)
-        res_ocr2 = self.client.post("/keluarga/ocr", data={})
-        self.assertEqual(res_ocr2.status_code, 404)
+        # Endpoint OCR tanpa file dan belum ada file tersimpan -> error 400
+        res_no_file = self.client.post("/akun/kk/ocr", data={})
+        self.assertEqual(res_no_file.status_code, 400)
+        self.assertIn("Silakan pilih berkas", res_no_file.get_json()["error"])
+
+        # Uji OCR dengan berkas tidak sah (.txt)
+        txt_buf = io.BytesIO(b"file teks tidak sah")
+        res_bad_ocr = self.client.post(
+            "/akun/kk/ocr",
+            data={"dokumen_kk": (txt_buf, "dokumen.txt")},
+            content_type="multipart/form-data"
+        )
+        self.assertEqual(res_bad_ocr.status_code, 400)
+        self.assertIn("Format file tidak didukung", res_bad_ocr.get_json()["error"])
 
         # Uji upload manual berkas tidak sah
-        txt_buf = io.BytesIO(b"file teks tidak sah")
+        txt_buf2 = io.BytesIO(b"file teks tidak sah")
         res_bad = self.client.post(
             "/akun/kk/simpan",
             data={
                 "nomor_kk": "6303082609160005",
+                "nik_kepala_keluarga": "6303084107670277",
                 "kepala_keluarga": "RUSTANIAH",
                 "alamat": "DESA BATU BALIAN",
-                "dokumen_kk": (txt_buf, "dokumen.txt")
+                "dokumen_kk": (txt_buf2, "dokumen.txt")
             },
             content_type="multipart/form-data"
         )
