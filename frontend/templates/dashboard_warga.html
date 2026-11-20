@@ -738,16 +738,10 @@
         btnOcr.disabled = true;
         btnOcr.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Memindai Dokumen (PaddleOCR)...';
 
-        let seconds = 0;
         if (ocrFeedback) {
             ocrFeedback.className = "alert alert-info py-2 px-3 small mb-2";
-            ocrFeedback.innerHTML = '<div class="d-flex align-items-center"><span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span><span>Sedang menganalisis teks Kartu Keluarga dengan AI PaddleOCR... (<strong id="ocr-timer-count">0</strong> detik). Harap tunggu sebentar.</span></div>';
+            ocrFeedback.innerHTML = '<div class="d-flex align-items-center"><span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span><span>Sedang menganalisis teks harap tunggu sebentar.</span></div>';
         }
-        const timerInterval = setInterval(() => {
-            seconds++;
-            const tEl = document.getElementById("ocr-timer-count");
-            if (tEl) tEl.textContent = seconds;
-        }, 1000);
 
         try {
             const res = await fetch("{{ url_for('warga.ocr_kk_warga') }}", {
@@ -755,7 +749,6 @@
                 body: fd
             });
             const result = await res.json();
-            clearInterval(timerInterval);
             if (!res.ok || !result.success) {
                 if (ocrFeedback) {
                     ocrFeedback.className = "alert alert-danger py-2 px-3 small mb-2";
@@ -781,26 +774,26 @@
 
             mapFields.forEach(item => {
                 const el = document.getElementById(item.id);
-                if (el && item.val) {
-                    el.value = item.val;
-                    countFilled++;
-                    el.classList.add("is-valid");
-                    setTimeout(() => el.classList.remove("is-valid"), 4500);
+                if (el) {
+                    el.value = item.val || "";
+                    if (item.val) {
+                        countFilled++;
+                        el.classList.add("is-valid");
+                        setTimeout(() => el.classList.remove("is-valid"), 4500);
+                    }
                 }
             });
 
             if (ocrFeedback) {
                 ocrFeedback.className = "alert alert-success py-2 px-3 small mb-2";
-                ocrFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> <strong>Selesai (${seconds} detik)!</strong> Dokumen berhasil dipindai. ${countFilled} kolom berhasil diisi otomatis. Silakan periksa atau ubah isian jika diperlukan sebelum klik <strong>Simpan Data</strong>.`;
+                ocrFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> <strong>Selesai!</strong> Dokumen berhasil dipindai. ${countFilled} kolom berhasil diisi otomatis. Silakan periksa atau ubah isian jika diperlukan sebelum klik <strong>Simpan Data</strong>.`;
             }
         } catch (err) {
-            clearInterval(timerInterval);
             if (ocrFeedback) {
                 ocrFeedback.className = "alert alert-danger py-2 px-3 small mb-2";
                 ocrFeedback.innerHTML = `<i class="bi bi-exclamation-octagon me-1"></i> Terjadi kesalahan jaringan saat proses OCR: ${err.message}`;
             }
         } finally {
-            clearInterval(timerInterval);
             btnOcr.disabled = false;
             btnOcr.innerHTML = '<i class="bi bi-magic me-1"></i> Pindai Dokumen Otomatis (PaddleOCR)';
         }

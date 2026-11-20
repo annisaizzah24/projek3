@@ -109,14 +109,24 @@ def _auto_orient_image(file_path: str) -> Tuple[str, bool]:
 
             # 2. Ambil paruh atas dokumen (Header + Baris 1 Tabel Anggota Keluarga)
             # 9 data yang dibutuhkan (Nomor KK, Nama KK, Alamat, RT/RW, Desa, Kecamatan, Kab/Kota, Provinsi, NIK)
-            # 100% berada di 33% teratas dokumen KK. Memotong 67% area bawah menghemat waktu secara drastis pada CPU.
-            crop_h = int(h * 0.33)
+            # 100% berada di 32% teratas dokumen KK (memotong baris 2-10 tabel anggota keluarga).
+            crop_h = int(h * 0.32)
             im = im.crop((0, 0, w, crop_h))
             w, h = im.size
             modified = True
 
-            # 3. Downscale jika resolusi foto sangat besar (> 1200px) untuk kecepatan inferensi CPU
-            MAX_DIM = 1200
+            # 3. Masking cerdas pada area Tabel Anggota Keluarga:
+            # Di area tabel (Y >= 24.5% dari tinggi dokumen), kolom 4-10 (X > 38% lebar)
+            # dimasker putih agar AI tidak membuang waktu memproses 40+ kotak teks kecil
+            # (Jenis Kelamin, Agama, Pekerjaan, dll) yang tidak dibutuhkan form.
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(im)
+            table_start_y = int(h * (0.245 / 0.32))
+            table_mask_x = int(w * 0.38)
+            draw.rectangle([table_mask_x, table_start_y, w, h], fill=(255, 255, 255))
+
+            # 4. Normalisasi Resolusi Cerdas ke 1000px untuk akselerasi kecepatan inferensi CPU & ketajaman angka NIK
+            MAX_DIM = 1000
             if max(w, h) > MAX_DIM:
                 ratio = MAX_DIM / max(w, h)
                 new_w, new_h = int(w * ratio), int(h * ratio)
@@ -156,6 +166,36 @@ def is_valid_person_name(name: str) -> bool:
     return alpha_chars >= 3 and not re.search(r"\d", name)
 
 
+def _get_box_center(b) -> Tuple[Optional[float], Optional[float]]:
+    """Menghitung titik tengah (center_x, center_y) dari bounding box OCR."""
+    if not b:
+        return None, None
+    if len(b) == 4 and isinstance(b[0], (int, float)):
+        # [xmin, ymin, xmax, ymax]
+        return (float(b[0]) + float(b[2])) / 2.0, (float(b[1]) + float(b[3])) / 2.0
+    elif len(b) >= 4 and isinstance(b[0], (list, tuple)):
+        # [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+        return sum(float(p[0]) for p in b) / len(b), sum(float(p[1]) for p in b) / len(b)
+    return None, None
+
+
+def _cluster_rows(items: list[dict], tol: float = 8.0) -> list[list[dict]]:
+    """Mengelompokkan teks OCR yang berada pada baris horizontal yang sama (toleransi Y)."""
+    sorted_items = sorted(items, key=lambda x: x["mid_y"])
+    rows: list[list[dict]] = []
+    for it in sorted_items:
+        placed = False
+        for r in rows:
+            avg_y = sum(x["mid_y"] for x in r) / len(r)
+            if abs(it["mid_y"] - avg_y) <= tol:
+                r.append(it)
+                placed = True
+                break
+        if not placed:
+            rows.append([it])
+    return rows
+
+
 def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
     """
     Mengekstrak informasi spesifik Kartu Keluarga dari daftar baris teks OCR:
@@ -169,7 +209,20 @@ def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
     - kabupaten_kota
     - provinsi
     """
-    raw_texts = [item.get("text", "").strip() for item in lines if item.get("text", "").strip()]
+    spatial_lines = []
+    for item in lines:
+        txt = item.get("text", "").strip()
+        if not txt:
+            continue
+        cx, cy = _get_box_center(item.get("box"))
+        spatial_lines.append({
+            "text": txt,
+            "mid_x": cx,
+            "mid_y": cy,
+            "box": item.get("box")
+        })
+
+    raw_texts = [it["text"] for it in spatial_lines]
     full_text = "\n".join(raw_texts)
 
     hasil: Dict[str, Optional[str]] = {
@@ -192,20 +245,112 @@ def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
         return v.strip()
 
     # 1. Nomor KK: cari 16 digit yang berada di header atau setelah kata 'No'/'Nomor'
-    for line in raw_texts:
-        m = re.search(r"(?:no|nomor)?\.?\s*[:.\-]?\s*(\d{16})", line, re.IGNORECASE)
+    for it in spatial_lines:
+        m = re.search(r"(?:no|nomor)?\.?\s*[:.\-]?\s*(\d{16})", it["text"], re.IGNORECASE)
         if m:
             hasil["nomor_kk"] = m.group(1)
             break
 
     if not hasil["nomor_kk"]:
-        for line in raw_texts:
-            m = re.search(r"\b(\d{16})\b", line)
+        for it in spatial_lines:
+            m = re.search(r"\b(\d{16})\b", it["text"])
             if m:
                 hasil["nomor_kk"] = m.group(1)
                 break
 
-    # 2. Scanning Label Berurutan (Header KK Format Standar)
+    # 2. Deteksi Batas Header dan Awal Tabel
+    has_coords = any(it["mid_x"] is not None and it["mid_y"] is not None for it in spatial_lines)
+    valid_items = [it for it in spatial_lines if it["mid_x"] is not None and it["mid_y"] is not None] if has_coords else []
+    table_headers = [
+        it for it in valid_items
+        if re.search(r"nama\s*l[ae]ngkap|name\s*l[ae]ngkap|nik\b|jenis\s*kelamin|jenio|kelar?min", it["text"], re.I)
+    ]
+    header_y_max = min([it["mid_y"] for it in table_headers]) if table_headers else 9999.0
+
+    # 3. NIK Kepala Keluarga: 16 digit angka di baris pertama tabel (atau selain Nomor KK)
+    table_items = [it for it in spatial_lines if it["mid_y"] is not None and it["mid_y"] >= header_y_max]
+    for it in table_items:
+        m_nik = re.search(r"(\d{16})", it["text"])
+        if m_nik and m_nik.group(1) != hasil["nomor_kk"]:
+            hasil["nik_kepala_keluarga"] = m_nik.group(1)
+            break
+    if not hasil["nik_kepala_keluarga"]:
+        for it in spatial_lines:
+            m_nik = re.search(r"(\d{16})", it["text"])
+            if m_nik and m_nik.group(1) != hasil["nomor_kk"]:
+                hasil["nik_kepala_keluarga"] = m_nik.group(1)
+                break
+    if not hasil["nik_kepala_keluarga"]:
+        for it in spatial_lines:
+            m_nik = re.search(r"(\d{15,16})", it["text"])
+            if m_nik and m_nik.group(1) != hasil["nomor_kk"]:
+                hasil["nik_kepala_keluarga"] = m_nik.group(1)
+                break
+
+    # Harmonisasi kode wilayah NIK (6 digit pertama) jika terdapat kesalahan baca 1 digit OCR (misal 5 terbaca 6)
+    if hasil["nomor_kk"] and hasil["nik_kepala_keluarga"] and len(hasil["nomor_kk"]) == 16 and len(hasil["nik_kepala_keluarga"]) == 16:
+        kk_prefix = hasil["nomor_kk"][:6]
+        nik_prefix = hasil["nik_kepala_keluarga"][:6]
+        diff_count = sum(c1 != c2 for c1, c2 in zip(kk_prefix, nik_prefix))
+        if diff_count == 1:
+            hasil["nik_kepala_keluarga"] = kk_prefix + hasil["nik_kepala_keluarga"][6:]
+
+    # 4. SPATIAL EXTRACTION: Pemisahan Kolom & Baris Header
+    # Mendukung Format KK Tradisional maupun Modern (Desa/Kelurahan bisa di Kolom Kiri atau Kolom Kanan)
+    if has_coords:
+        header_items = [
+            it for it in valid_items
+            if 40.0 < it["mid_y"] < header_y_max - 5 and not re.search(r"^kartu\s*keluarga|^no\.", it["text"], re.I)
+        ]
+        if header_items:
+            xs = [it["mid_x"] for it in header_items]
+            col_split_x = (min(xs) + max(xs)) / 2.0
+
+            left_items = [it for it in header_items if it["mid_x"] < col_split_x]
+            right_items = [it for it in header_items if it["mid_x"] >= col_split_x]
+
+            all_rows = _cluster_rows(left_items) + _cluster_rows(right_items)
+            for r in all_rows:
+                r_sorted = sorted(r, key=lambda x: x["mid_x"])
+                first_txt = r_sorted[0]["text"].lower()
+                val_txt = clean_val(" ".join(x["text"] for x in r_sorted[1:])) if len(r_sorted) > 1 else ""
+
+                if not val_txt and ":" in r_sorted[0]["text"]:
+                    parts = r_sorted[0]["text"].split(":", 1)
+                    first_txt = parts[0].strip().lower()
+                    val_txt = clean_val(parts[1])
+
+                if "nama kepala keluarga" in first_txt and not hasil["kepala_keluarga"]:
+                    if val_txt and is_valid_person_name(val_txt):
+                        hasil["kepala_keluarga"] = val_txt
+                elif re.search(r"^(?:ala[mrn]{2,4}at|alamat|alarnat|alfirwi)", first_txt) and not hasil["alamat"]:
+                    val_clean = re.sub(r"\s*[0-9OoSs]{1,4}\s*[/]\s*[0-9OoSs\-]{1,4}.*", "", val_txt).strip()
+                    if val_clean:
+                        hasil["alamat"] = val_clean
+                    elif val_txt:
+                        hasil["alamat"] = val_txt
+                elif re.search(r"^rt\s*[/.]?\s*rw", first_txt) and not hasil["rt_rw"]:
+                    m_r = re.search(r"([0-9OoSs]{1,4})\s*[/]\s*([0-9OoSs\-]{1,4})?", val_txt)
+                    if m_r:
+                        r1 = m_r.group(1).upper().replace("S", "0").replace("O", "0")
+                        r2 = (m_r.group(2) or "-").upper().replace("S", "0").replace("O", "0")
+                        p1 = f"{int(r1):03d}" if r1.isdigit() else r1
+                        p2 = f"{int(r2):03d}" if r2.isdigit() else (r2 if r2 else "-")
+                        hasil["rt_rw"] = f"{p1}/{p2}"
+                elif re.search(r"^desa\s*[/.]?\s*kelurahan", first_txt) and not hasil["desa_kelurahan"]:
+                    if val_txt:
+                        hasil["desa_kelurahan"] = val_txt
+                elif re.search(r"^(?:kecamatan|kecanatan)", first_txt) and not hasil["kecamatan"]:
+                    if val_txt:
+                        hasil["kecamatan"] = val_txt
+                elif re.search(r"^(?:kabupaten\s*[/.]?\s*kota|keluapteian/kota|keuapteian/kota|kabupatan/kota)", first_txt) and not hasil["kabupaten_kota"]:
+                    if val_txt:
+                        hasil["kabupaten_kota"] = val_txt
+                elif re.search(r"^(?:provinsi|prooisi|proisi|proroisi)", first_txt) and not hasil["provinsi"]:
+                    if val_txt:
+                        hasil["provinsi"] = val_txt
+
+    # 4. Fallback Scanning Label Berurutan (jika ada data yang belum terisi dari ekstraksi spasial)
     for i, l in enumerate(raw_texts):
         l_strip = l.strip()
         l_lower = l_strip.lower()
@@ -278,13 +423,13 @@ def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
             m = re.search(r"^(?:kecamatan|kecanatan)\s*[:.\-]?\s*(.*)", l_strip, re.IGNORECASE)
             if m and clean_val(m.group(1)):
                 cand = clean_val(m.group(1))
-                if not re.search(r"^(?:kabupaten|keluapteian|keuapteian|provinsi)", cand, re.I):
+                if not re.search(r"[\d/]", cand) and not re.search(r"^(?:kabupaten|keluapteian|keuapteian|provinsi)", cand, re.I):
                     hasil["kecamatan"] = cand
             elif i + 1 < len(raw_texts):
                 for offset in (1, 2, 3, 4, 5, 6, 7):
                     if i + offset < len(raw_texts):
                         cand = clean_val(raw_texts[i + offset])
-                        if cand and len(cand) >= 3 and not re.search(r"\d", cand) and not re.search(r"^(?:kode|pos|kabupaten|keluapteian|keuapteian|provinsi|proroisi|desa|kelurahan|alamat|rt|jl)", cand, re.I):
+                        if cand and len(cand) >= 3 and not re.search(r"[\d/]", cand) and not re.search(r"^(?:kode|pos|kabupaten|keluapteian|keuapteian|provinsi|proroisi|desa|kelurahan|alamat|rt|jl)", cand, re.I):
                             hasil["kecamatan"] = cand
                             break
 
@@ -293,13 +438,13 @@ def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
             m = re.search(r"^(?:kabupaten\s*[/.]?\s*kota|keluapteian/kota|keuapteian/kota)\s*[:.\-]?\s*(.*)", l_strip, re.IGNORECASE)
             if m and clean_val(m.group(1)):
                 cand = clean_val(m.group(1))
-                if not re.search(r"^(?:provinsi|prooisi|proroisi)", cand, re.I):
+                if not re.search(r"[\d/]", cand) and not re.search(r"^(?:provinsi|prooisi|proroisi)", cand, re.I):
                     hasil["kabupaten_kota"] = cand
             elif i + 1 < len(raw_texts):
                 for offset in (1, 2):
                     if i + offset < len(raw_texts):
                         cand = clean_val(raw_texts[i + offset])
-                        if cand and not re.search(r"^(?:provinsi|prooisi|proroisi|kode|pos)", cand, re.I):
+                        if cand and not re.search(r"[\d/]", cand) and not re.search(r"^(?:provinsi|prooisi|proroisi|kode|pos|kecamatan|desa|kelurahan)", cand, re.I):
                             hasil["kabupaten_kota"] = cand
                             break
 
@@ -308,11 +453,11 @@ def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
             m = re.search(r"^(?:provinsi|prooisi|proisi|proroisi)\s*[:.\-]?\s*(.*)", l_strip, re.IGNORECASE)
             if m and clean_val(m.group(1)):
                 cand = clean_val(m.group(1))
-                if not re.search(r"^(?:no|nama|nik)", cand, re.I):
+                if not re.search(r"[\d/]", cand) and not re.search(r"^(?:no|nama|nik|kode|pos)", cand, re.I):
                     hasil["provinsi"] = cand
             elif i + 1 < len(raw_texts):
                 cand = clean_val(raw_texts[i + 1])
-                if cand and not re.search(r"^(?:no|nama|nik)", cand, re.I):
+                if cand and not re.search(r"[\d/]", cand) and not re.search(r"^(?:no|nama|nik|kode|pos)", cand, re.I):
                     hasil["provinsi"] = cand
 
     # 3. Fallback Alamat jika belum ketemu dari label: cari baris berawalan JL/Jalan/Dusun/Blok
@@ -327,7 +472,7 @@ def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
     # 4. Fallback RT/RW jika belum ketemu: cari pola regex di seluruh teks
     if not hasil["rt_rw"]:
         for l in raw_texts:
-            m_rtrw = re.search(r"\b([0-9OoSs]{1,4}\s*[/]\s*[0-9OoSs\-]{1,4})\b", l)
+            m_rtrw = re.search(r"\b([0-9OoSs]{1,4}\s*[/]\s*[0-9OoSs\-]{1,4})", l)
             if m_rtrw:
                 cand = m_rtrw.group(1).upper().replace("S", "0").replace("O", "0").replace(" ", "")
                 parts = cand.split("/")
@@ -349,14 +494,23 @@ def ekstrak_informasi_kk(lines: list[dict]) -> Dict[str, Any]:
                 if hasil["kepala_keluarga"]:
                     break
 
-    # 6. NIK Kepala Keluarga: 15-16 digit angka selain nomor KK (biasanya di baris pertama tabel anggota)
-    for line in raw_texts:
-        m_nik = re.search(r"(\d{15,16})", line)
-        if m_nik:
-            val = m_nik.group(1)
-            if val != hasil["nomor_kk"]:
-                hasil["nik_kepala_keluarga"] = val
-                break
+    # 6. Fallback NIK Kepala Keluarga jika belum ketemu: 15-16 digit angka selain nomor KK
+    if not hasil["nik_kepala_keluarga"]:
+        for line in raw_texts:
+            m_nik = re.search(r"(\d{15,16})", line)
+            if m_nik:
+                val = m_nik.group(1)
+                if val != hasil["nomor_kk"]:
+                    hasil["nik_kepala_keluarga"] = val
+                    break
+
+    # Harmonisasi kode wilayah NIK (6 digit pertama) dengan Nomor KK jika terdapat kesalahan baca 1 digit OCR
+    if hasil["nomor_kk"] and hasil["nik_kepala_keluarga"] and len(hasil["nomor_kk"]) == 16 and len(hasil["nik_kepala_keluarga"]) == 16:
+        kk_prefix = hasil["nomor_kk"][:6]
+        nik_prefix = hasil["nik_kepala_keluarga"][:6]
+        diff_count = sum(c1 != c2 for c1, c2 in zip(kk_prefix, nik_prefix))
+        if diff_count <= 2 and (kk_prefix[:2] == nik_prefix[:2] or diff_count == 1):
+            hasil["nik_kepala_keluarga"] = kk_prefix + hasil["nik_kepala_keluarga"][6:]
 
     return {
         "success": True,
